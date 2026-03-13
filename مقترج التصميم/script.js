@@ -62,7 +62,12 @@ function loadFromStorage() {
 function initCampaignStudents() {
   campaigns.forEach(c => {
     if (!campaignStudents[c.id]) {
-      campaignStudents[c.id] = students.map(s => ({ studentId: s.id, status: 'لم يرد', notes: '' }));
+      campaignStudents[c.id] = students.map(s => ({ 
+        studentId: s.id, 
+        status: s.status || 'لم يرد', 
+        notes: '',
+        followupDate: s.followupDate || '' 
+      }));
     }
   });
 }
@@ -156,22 +161,38 @@ function renderDashboard() {
 
   // Today follow-ups (show students with followupDate today or no-answer/call-later)
   const today = new Date().toISOString().slice(0, 10);
-  const todayStudents = students.filter(s =>
-    s.status === 'لم يرد' || s.status === 'اتصل لاحقًا' || s.followupDate === today
-  ).slice(0, 5);
+  let todayData = [];
+  
+  campaigns.forEach(c => {
+    const cs = campaignStudents[c.id] || [];
+    cs.forEach(entry => {
+      if (entry.status === 'لم يرد' || entry.status === 'اتصل لاحقًا' || entry.followupDate === today) {
+        const s = students.find(x => x.id === entry.studentId);
+        if (s) {
+          todayData.push({ ...s, campaignName: c.name, campaignStatus: entry.status });
+        }
+      }
+    });
+  });
 
-  document.getElementById('today-count').textContent = todayStudents.length + ' طلاب';
+  // Unique students or unique campaign-student pairs? Let's go with unique campaign-student pairs but limit
+  const displayData = todayData.slice(0, 10);
+
+  document.getElementById('today-count').textContent = displayData.length + ' طلاب';
 
   const tbody = document.getElementById('today-table');
-  tbody.innerHTML = todayStudents.length ? todayStudents.map(s => `
+  tbody.innerHTML = displayData.length ? displayData.map(s => `
     <tr>
       <td><div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">${s.name[0]}</div>
-        <span class="font-medium">${s.name}</span>
+        <div>
+          <p class="font-medium">${s.name}</p>
+          <p class="text-[10px] text-slate-400"><i class="fas fa-bullhorn ml-1"></i>${s.campaignName}</p>
+        </div>
       </div></td>
       <td><a href="tel:${s.phone}" class="text-blue-600 hover:underline font-mono text-sm">${s.phone}</a></td>
       <td><span class="text-slate-600 text-sm">${s.grade}</span></td>
-      <td>${getStatusBadge(s.status)}</td>
+      <td>${getStatusBadge(s.campaignStatus)}</td>
       <td>
         <a href="tel:${s.phone}" class="btn-success text-xs py-1.5 px-3 inline-flex items-center gap-1">
           <i class="fas fa-phone text-xs"></i> اتصال
@@ -274,10 +295,11 @@ function saveStudent() {
       showToast('تم تحديث بيانات الطالب بنجاح ✓', 'success');
     }
   } else {
-    students.push({ id: nextStudentId++, name, phone, parentPhone, grade, school, notes, status: 'لم يرد', followupDate: '' });
+    const newStudent = { id: nextStudentId++, name, phone, parentPhone, grade, school, notes, status: 'لم يرد', followupDate: '' };
+    students.push(newStudent);
     // Add to all campaigns
     Object.keys(campaignStudents).forEach(cid => {
-      campaignStudents[cid].push({ studentId: nextStudentId - 1, status: 'لم يرد', notes: '' });
+      campaignStudents[cid].push({ studentId: newStudent.id, status: 'لم يرد', notes: '', followupDate: '' });
     });
     showToast('تم إضافة الطالب بنجاح ✓', 'success');
   }
@@ -359,7 +381,7 @@ function openCampaignDetail(id) {
   document.getElementById('campaign-detail-date').textContent = campaign.date;
 
   if (!campaignStudents[id]) {
-    campaignStudents[id] = students.map(s => ({ studentId: s.id, status: 'لم يرد', notes: '' }));
+    campaignStudents[id] = students.map(s => ({ studentId: s.id, status: s.status || 'لم يرد', notes: '', followupDate: s.followupDate || '' }));
   }
 
   renderCampaignStudents(id);
@@ -389,13 +411,18 @@ function renderCampaignStudents(cid) {
           </select>
         </td>
         <td>
+          <input type="date" class="form-input text-xs py-1.5" value="${entry.followupDate || ''}"
+            onchange="updateCampaignStudentFollowupDate(${cid}, ${s.id}, this.value)"
+            style="width:130px"/>
+        </td>
+        <td>
           <input type="text" class="form-input text-xs py-1.5" placeholder="ملاحظة..." value="${entry.notes}"
             onchange="updateCampaignStudentNotes(${cid}, ${s.id}, this.value)"
-            style="width:180px"/>
+            style="width:150px"/>
         </td>
       </tr>
     `;
-  }).join('') : `<tr><td colspan="4" class="text-center py-8 text-slate-400">لا يوجد طلاب في هذه الحملة</td></tr>`;
+  }).join('') : `<tr><td colspan="5" class="text-center py-8 text-slate-400">لا يوجد طلاب في هذه الحملة</td></tr>`;
 }
 
 function hideCampaignDetail() {
@@ -426,6 +453,16 @@ function updateCampaignStudentNotes(cid, sid, val) {
   }
 }
 
+function updateCampaignStudentFollowupDate(cid, sid, val) {
+  if (!campaignStudents[cid]) return;
+  const entry = campaignStudents[cid].find(x => x.studentId === sid);
+  if (entry) {
+    entry.followupDate = val;
+    saveToStorage();
+    showToast('تم تحديث تاريخ المتابعة', 'success');
+  }
+}
+
 // ---- ADD CAMPAIGN ----
 function openAddCampaignModal() {
   document.getElementById('c-name').value = '';
@@ -443,7 +480,12 @@ function saveCampaign() {
 
   const newCampaign = { id: nextCampaignId++, name, date, notes };
   campaigns.push(newCampaign);
-  campaignStudents[newCampaign.id] = students.map(s => ({ studentId: s.id, status: 'لم يرد', notes: '' }));
+  campaignStudents[newCampaign.id] = students.map(s => ({ 
+    studentId: s.id, 
+    status: s.status || 'لم يرد', 
+    notes: '', 
+    followupDate: s.followupDate || '' 
+  }));
 
   closeModal('modal-campaign');
   saveToStorage();
@@ -453,38 +495,58 @@ function saveCampaign() {
 
 // ---- FOLLOW-UPS ----
 function renderFollowups() {
-  const followupStudents = students.filter(s =>
-    ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'].includes(s.status)
-  );
-
   const tbody = document.getElementById('followups-table');
   const today = new Date().toISOString().slice(0, 10);
+  let html = '';
+  let totalFollowups = 0;
 
-  tbody.innerHTML = followupStudents.length ? followupStudents.map(s => {
-    const isToday = s.followupDate === today;
-    return `
-      <tr class="${isToday ? 'bg-blue-50/40' : ''}">
-        <td>
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white text-sm font-bold">${s.name[0]}</div>
-            <div>
-              <p class="font-semibold text-sm">${s.name}</p>
-              ${isToday ? '<span class="text-xs text-blue-600 font-bold">اليوم!</span>' : ''}
-            </div>
-          </div>
-        </td>
-        <td><a href="tel:${s.phone}" class="text-blue-600 font-mono text-sm hover:underline">${s.phone}</a></td>
-        <td>${getStatusBadge(s.status)}</td>
-        <td class="text-sm text-slate-600 font-mono">${s.followupDate || '—'}</td>
-        <td class="text-sm text-slate-500 max-w-xs">${s.notes || '—'}</td>
-        <td>
-          <a href="tel:${s.phone}" class="btn-primary py-1.5 px-4 text-xs inline-flex items-center gap-2">
-            <i class="fas fa-phone text-xs"></i> اتصال
-          </a>
-        </td>
-      </tr>
-    `;
-  }).join('') : `<tr><td colspan="6" class="text-center py-10 text-slate-400"><i class="fas fa-check-circle text-3xl mb-2 block text-emerald-400"></i>رائع! لا يوجد طلاب يحتاجون متابعة حالياً</td></tr>`;
+  campaigns.forEach(c => {
+    const cs = campaignStudents[c.id] || [];
+    const campaignFollowups = cs.filter(entry => 
+      ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'].includes(entry.status)
+    );
+
+    if (campaignFollowups.length > 0) {
+      totalFollowups += campaignFollowups.length;
+      html += `
+        <tr class="bg-slate-50">
+          <td colspan="6" class="py-2 px-4 font-bold text-slate-700 border-b border-t border-slate-200">
+            <i class="fas fa-bullhorn ml-1 text-blue-500"></i> ${c.name}
+          </td>
+        </tr>
+      `;
+      
+      campaignFollowups.forEach(entry => {
+        const s = students.find(x => x.id === entry.studentId);
+        if (!s) return;
+        const isToday = entry.followupDate === today;
+        html += `
+          <tr class="${isToday ? 'bg-blue-50/40' : ''}">
+            <td>
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white text-sm font-bold">${s.name[0]}</div>
+                <div>
+                  <p class="font-semibold text-sm">${s.name}</p>
+                  ${isToday ? '<span class="text-xs text-blue-600 font-bold">اليوم!</span>' : ''}
+                </div>
+              </div>
+            </td>
+            <td><a href="tel:${s.phone}" class="text-blue-600 font-mono text-sm hover:underline">${s.phone}</a></td>
+            <td>${getStatusBadge(entry.status)}</td>
+            <td class="text-sm text-slate-600 font-mono">${entry.followupDate || '—'}</td>
+            <td class="text-sm text-slate-500 max-w-xs">${entry.notes || '—'}</td>
+            <td>
+              <a href="tel:${s.phone}" class="btn-primary py-1.5 px-4 text-xs inline-flex items-center gap-2">
+                <i class="fas fa-phone text-xs"></i> اتصال
+              </a>
+            </td>
+          </tr>
+        `;
+      });
+    }
+  });
+
+  tbody.innerHTML = html || `<tr><td colspan="6" class="text-center py-10 text-slate-400"><i class="fas fa-check-circle text-3xl mb-2 block text-emerald-400"></i>رائع! لا يوجد طلاب يحتاجون متابعة حالياً في أي حملة</td></tr>`;
 }
 
 // ---- REPORTS ----
@@ -562,6 +624,17 @@ function updateStats() {
   document.getElementById('stat-noanswer') && (document.getElementById('stat-noanswer').textContent = s.noAnswer);
   document.getElementById('dash-total') && (document.getElementById('dash-total').textContent = s.total);
   document.getElementById('dash-registered') && (document.getElementById('dash-registered').textContent = s.registered);
+
+  // Update follow-up badge
+  let totalFollowups = 0;
+  campaigns.forEach(c => {
+    const cs = campaignStudents[c.id] || [];
+    totalFollowups += cs.filter(entry => 
+      ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'].includes(entry.status)
+    ).length;
+  });
+  const badge = document.getElementById('followup-badge');
+  if (badge) badge.textContent = totalFollowups;
 }
 
 // ---- DATE ----
