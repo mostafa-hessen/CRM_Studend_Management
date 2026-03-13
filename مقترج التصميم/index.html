@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>نظام إدارة الطلاب والحملات</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --primary-dark: #1d4ed8;
+      --emerald: #059669;
+      --emerald-light: #d1fae5;
+      --sidebar-bg: #0f172a;
+      --sidebar-hover: #1e293b;
+      --sidebar-active: #2563eb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Cairo', 'Tajawal', sans-serif;
+      background: #f0f4f8;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* Sidebar */
+    #sidebar {
+      width: 260px;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      position: fixed;
+      right: 0;
+      top: 0;
+      z-index: 50;
+      transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #sidebar .logo-area {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      margin: 3px 12px;
+      border-radius: 10px;
+      color: #94a3b8;
+      font-size: 0.92rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      text-decoration: none;
+    }
+    .nav-item:hover {
+      background: rgba(255,255,255,0.06);
+      color: #e2e8f0;
+      transform: translateX(-3px);
+    }
+    .nav-item.active {
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(37,99,235,0.35);
+    }
+    .nav-item .icon { width: 36px; height: 36px; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-size:1rem; background:rgba(255,255,255,0.07); flex-shrink:0; }
+    .nav-item.active .icon { background:rgba(255,255,255,0.2); }
+
+    /* Main */
+    #main-content {
+      margin-right: 260px;
+      min-height: 100vh;
+      transition: margin 0.3s;
+    }
+
+    /* Topbar */
+    #topbar {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 28px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    }
+
+    /* Cards */
+    .stat-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 22px 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      transition: all 0.25s ease;
+      border: 1px solid #f1f5f9;
+      cursor: default;
+    }
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+    }
+
+    /* Tables */
+    .data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .data-table th {
+      background: #f8fafc;
+      padding: 12px 16px;
+      text-align: right;
+      font-size: 0.8rem;
+      color: #64748b;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .data-table td {
+      padding: 13px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.88rem;
+      color: #334155;
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr { transition: background 0.15s; }
+    .data-table tbody tr:hover { background: #f8faff; }
+
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: #fff;
+      padding: 9px 20px;
+      border-radius: 9px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(37,99,235,0.4); }
+
+    .btn-success {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-success:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(5,150,105,0.3); }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-danger:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(220,38,38,0.3); }
+
+    .btn-edit {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-edit:hover { background: #e2e8f0; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.55);
+      backdrop-filter: blur(4px);
+      z-index: 100; display: none;
+      align-items: center; justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px;
+      width: 90%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s cubic-bezier(.34,1.56,.64,1);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+    }
+    @keyframes slideUp { from { opacity:0; transform: translateY(24px) scale(0.97); } to { opacity:1; transform: translateY(0) scale(1); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+    /* Form inputs */
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.88rem;
+      color: #1e293b;
+      background: #f8fafc;
+      transition: all 0.2s;
+      outline: none;
+    }
+    .form-input:focus { border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+    .form-label { font-size: 0.83rem; font-weight: 600; color: #475569; margin-bottom: 5px; display:block; }
+
+    /* Toast */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 280px;
+      border-right: 4px solid #3b82f6;
+      animation: toastIn 0.35s cubic-bezier(.34,1.56,.64,1);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .toast.success { border-right-color: #059669; }
+    .toast.error { border-right-color: #dc2626; }
+    .toast.warning { border-right-color: #f59e0b; }
+    @keyframes toastIn { from { opacity:0; transform: translateX(-20px); } to { opacity:1; transform: translateX(0); } }
+    @keyframes toastOut { to { opacity:0; transform: translateX(-20px); } }
+
+    /* Status badges */
+    .badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .badge-interested { background: #d1fae5; color: #065f46; }
+    .badge-hesitant { background: #fef3c7; color: #78350f; }
+    .badge-not-interested { background: #fee2e2; color: #7f1d1d; }
+    .badge-call-later { background: #ede9fe; color: #4c1d95; }
+    .badge-no-answer { background: #f1f5f9; color: #475569; }
+    .badge-registered { background: #dbeafe; color: #1e3a8a; }
+
+    /* Progress bar */
+    .progress-bar { height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+
+    /* Page transitions */
+    .page { display: none; animation: pageIn 0.3s ease; }
+    .page.active { display: block; }
+    @keyframes pageIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+    /* Welcome card */
+    .welcome-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1d4ed8 100%);
+      border-radius: 20px;
+      padding: 36px 40px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .welcome-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: -60px;
+      width: 220px; height: 220px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50%;
+    }
+    .welcome-card::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; right: 100px;
+      width: 300px; height: 300px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 50%;
+    }
+
+    /* Campaign card */
+    .campaign-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+    .campaign-card:hover { border-color: #93c5fd; box-shadow: 0 4px 16px rgba(37,99,235,0.1); }
+
+    /* Select */
+    .status-select {
+      padding: 6px 10px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.8rem;
+      background: #f8fafc;
+      color: #334155;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .status-select:focus { border-color: #3b82f6; }
+
+    /* Guide sections */
+    .guide-step {
+      background: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s;
+    }
+    .guide-step:hover { border-color: #bfdbfe; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(37,99,235,0.08); }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(100%); }
+      #sidebar.open { transform: translateX(0); }
+      #main-content { margin-right: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div class="logo-area">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-lg font-bold shadow-lg">
+        <i class="fas fa-graduation-cap text-sm"></i>
+      </div>
+      <div>
+        <p class="text-white font-bold text-sm leading-tight">نظام إدارة</p>
+        <p class="text-slate-400 text-xs">الطلاب والحملات</p>
+      </div>
+    </div>
+  </div>
+
+  <nav class="flex-1 py-4">
+    <p class="text-slate-500 text-xs font-bold px-8 mb-3 uppercase tracking-widest">القائمة الرئيسية</p>
+    <a class="nav-item active" onclick="navigate('dashboard')">
+      <span class="icon"><i class="fas fa-chart-pie"></i></span>
+      <span>لوحة التحكم</span>
+    </a>
+    <a class="nav-item" onclick="navigate('students')">
+      <span class="icon"><i class="fas fa-user-graduate"></i></span>
+      <span>الطلاب</span>
+    </a>
+    <a class="nav-item" onclick="navigate('campaigns')">
+      <span class="icon"><i class="fas fa-bullhorn"></i></span>
+      <span>الحملات</span>
+    </a>
+    <a class="nav-item" onclick="navigate('followups')">
+      <span class="icon"><i class="fas fa-phone-alt"></i></span>
+      <span>المتابعات</span>
+      <span class="mr-auto bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">3</span>
+    </a>
+    <a class="nav-item" onclick="navigate('reports')">
+      <span class="icon"><i class="fas fa-chart-bar"></i></span>
+      <span>التقارير</span>
+    </a>
+    <a class="nav-item" onclick="navigate('guide')">
+      <span class="icon"><i class="fas fa-book-open"></i></span>
+      <span>دليل الاستخدام</span>
+    </a>
+  </nav>
+
+  <div class="p-5 border-t border-slate-700/50">
+    <div class="flex items-center gap-3">
+      <img src="https://i.ibb.co/DgWdcYp8/Whats-App-Image-2026-03-13-at-15-47-40.jpg"
+           onerror="this.src='https://ui-avatars.com/api/?name=WA&background=2563eb&color=fff&size=40'"
+           class="w-9 h-9 rounded-full object-cover border-2 border-slate-600" alt="Profile"/>
+      <div>
+        <p class="text-white text-xs font-bold">د. وائل العبد</p>
+        <p class="text-slate-400 text-xs">خبير اللغة العربية</p>
+      </div>
+      <div class="mr-auto w-2 h-2 bg-emerald-400 rounded-full"></div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<div id="main-content">
+  <!-- Topbar -->
+  <header id="topbar">
+    <div class="flex items-center gap-3">
+      <button class="md:hidden text-slate-500 text-xl" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div>
+        <h1 id="page-title" class="font-bold text-slate-800 text-base">لوحة التحكم</h1>
+        <p class="text-xs text-slate-400" id="current-date"></p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="relative">
+        <input type="text" placeholder="بحث سريع..." class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm pr-10 outline-none focus:border-blue-400 w-52 hidden md:block" style="font-family:'Cairo',sans-serif"/>
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm hidden md:block"></i>
+      </div>
+      <button class="relative text-slate-500 hover:text-blue-600 transition-colors">
+        <i class="fas fa-bell text-lg"></i>
+        <span class="absolute -top-1 -left-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-content-center text-center leading-4">3</span>
+      </button>
+      <img src="https://i.ibb.co/DgWdcYp8/Whats-App-Image-2026-03-13-at-15-47-40.jpg"
+           onerror="this.src='https://ui-avatars.com/api/?name=WA&background=2563eb&color=fff&size=40'"
+           class="w-9 h-9 rounded-full object-cover border-2 border-blue-200 cursor-pointer" alt="Profile"/>
+    </div>
+  </header>
+
+  <div class="p-6 md:p-8">
+
+    <!-- ============= DASHBOARD PAGE ============= -->
+    <div id="page-dashboard" class="page active">
+      <!-- Welcome Card -->
+      <div class="welcome-card mb-8">
+        <div class="flex flex-col md:flex-row items-center gap-6 relative z-10">
+          <img src="https://i.ibb.co/DgWdcYp8/Whats-App-Image-2026-03-13-at-15-47-40.jpg"
+               onerror="this.src='https://ui-avatars.com/api/?name=WA&background=1d4ed8&color=fff&size=100'"
+               class="w-24 h-24 rounded-2xl object-cover border-4 border-white/20 shadow-2xl flex-shrink-0"/>
+          <div class="text-center md:text-right">
+            <p class="text-blue-300 text-sm font-medium mb-1">مرحبًا بكم في نظام إدارة الطلاب والحملات الدعوية</p>
+            <h2 class="text-white text-2xl font-black mb-1">الدكتور وائل العبد</h2>
+            <p class="text-blue-200 font-semibold text-sm mb-3">خبير اللغة العربية والمواد الشرعية</p>
+            <p class="text-slate-300 text-sm max-w-lg leading-relaxed">هذا النظام يساعدكم على متابعة الطلاب، إدارة حملات التواصل، وتحسين عملية التسجيل بطريقة منظمة واحترافية.</p>
+          </div>
+          <div class="mr-auto hidden md:flex flex-col gap-3 flex-shrink-0">
+            <div class="bg-white/10 rounded-xl px-5 py-3 text-center backdrop-blur-sm">
+              <p class="text-white text-2xl font-black" id="dash-total">12</p>
+              <p class="text-blue-200 text-xs">إجمالي الطلاب</p>
+            </div>
+            <div class="bg-emerald-500/20 rounded-xl px-5 py-3 text-center backdrop-blur-sm">
+              <p class="text-emerald-300 text-2xl font-black" id="dash-registered">4</p>
+              <p class="text-emerald-200 text-xs">مسجلون</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div class="stat-card">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-users text-blue-600"></i>
+            </div>
+            <span class="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg font-bold">+3 هذا الأسبوع</span>
+          </div>
+          <p class="text-3xl font-black text-slate-800" id="stat-total">12</p>
+          <p class="text-xs text-slate-500 mt-1">إجمالي الطلاب</p>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-11 h-11 bg-indigo-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-phone-volume text-indigo-600"></i>
+            </div>
+          </div>
+          <p class="text-3xl font-black text-slate-800" id="stat-contacted">8</p>
+          <p class="text-xs text-slate-500 mt-1">تم الاتصال بهم</p>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-heart text-amber-600"></i>
+            </div>
+          </div>
+          <p class="text-3xl font-black text-slate-800" id="stat-interested">5</p>
+          <p class="text-xs text-slate-500 mt-1">الطلاب المهتمون</p>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-check-circle text-emerald-600"></i>
+            </div>
+          </div>
+          <p class="text-3xl font-black text-slate-800" id="stat-registered">4</p>
+          <p class="text-xs text-slate-500 mt-1">الطلاب المسجلون</p>
+        </div>
+        <div class="stat-card col-span-2 lg:col-span-1">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-11 h-11 bg-red-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-phone-slash text-red-500"></i>
+            </div>
+          </div>
+          <p class="text-3xl font-black text-slate-800" id="stat-noanswer">3</p>
+          <p class="text-xs text-slate-500 mt-1">لم يتم الرد</p>
+        </div>
+      </div>
+
+      <!-- Today Follow-ups -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
+            <h3 class="font-bold text-slate-800">طلاب يجب التواصل معهم اليوم</h3>
+          </div>
+          <span class="text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full font-bold" id="today-count">3 طلاب</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>الهاتف</th>
+                <th>الصف</th>
+                <th>الحالة</th>
+                <th>الإجراء</th>
+              </tr>
+            </thead>
+            <tbody id="today-table">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============= STUDENTS PAGE ============= -->
+    <div id="page-students" class="page">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-800">إدارة الطلاب</h2>
+          <p class="text-sm text-slate-500">عرض وإدارة جميع بيانات الطلاب</p>
+        </div>
+        <button class="btn-primary" onclick="openAddStudentModal()">
+          <i class="fas fa-plus"></i> إضافة طالب جديد
+        </button>
+      </div>
+
+      <!-- Search & Filter -->
+      <div class="bg-white rounded-xl border border-slate-100 p-4 mb-5 flex flex-wrap gap-3">
+        <div class="relative flex-1 min-w-48">
+          <input type="text" placeholder="بحث باسم الطالب..." class="form-input pr-10" oninput="filterStudents(this.value)"/>
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        </div>
+        <select class="form-input w-auto" onchange="filterByClass(this.value)">
+          <option value="">جميع الصفوف</option>
+          <option>الصف التاسع</option>
+          <option>الصف العاشر</option>
+          <option>الصف الحادي عشر</option>
+          <option>الصف الثاني عشر</option>
+        </select>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم الطالب</th>
+                <th>رقم الهاتف</th>
+                <th>هاتف ولي الأمر</th>
+                <th>الصف</th>
+                <th>المدرسة</th>
+                <th>ملاحظات</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="students-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============= CAMPAIGNS PAGE ============= -->
+    <div id="page-campaigns" class="page">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-800">إدارة الحملات</h2>
+          <p class="text-sm text-slate-500">إنشاء وإدارة حملات التواصل مع الطلاب</p>
+        </div>
+        <button class="btn-primary" onclick="openAddCampaignModal()">
+          <i class="fas fa-plus"></i> إنشاء حملة جديدة
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="campaigns-list"></div>
+
+      <div id="campaign-detail" class="hidden">
+        <div class="flex items-center gap-3 mb-5">
+          <button onclick="hideCampaignDetail()" class="text-slate-500 hover:text-blue-600 transition-colors">
+            <i class="fas fa-arrow-right text-xl"></i>
+          </button>
+          <div>
+            <h3 class="font-bold text-lg text-slate-800" id="campaign-detail-name"></h3>
+            <p class="text-sm text-slate-500" id="campaign-detail-date"></p>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>اسم الطالب</th>
+                  <th>الهاتف</th>
+                  <th>الحالة</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="campaign-students-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============= FOLLOW UPS PAGE ============= -->
+    <div id="page-followups" class="page">
+      <div class="mb-6">
+        <h2 class="text-xl font-black text-slate-800">المتابعات</h2>
+        <p class="text-sm text-slate-500">الطلاب الذين يحتاجون إلى متابعة</p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>اسم الطالب</th>
+                <th>الهاتف</th>
+                <th>الحالة الأخيرة</th>
+                <th>تاريخ المتابعة</th>
+                <th>ملاحظات</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="followups-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============= REPORTS PAGE ============= -->
+    <div id="page-reports" class="page">
+      <div class="mb-6">
+        <h2 class="text-xl font-black text-slate-800">التقارير والإحصائيات</h2>
+        <p class="text-sm text-slate-500">نظرة شاملة على أداء الحملات والتسجيل</p>
+      </div>
+
+      <!-- KPI row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+        <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <p class="text-sm text-slate-500 mb-1">نسبة التحويل</p>
+              <p class="text-3xl font-black text-blue-600">33%</p>
+            </div>
+            <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
+              <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill bg-gradient-to-r from-blue-500 to-blue-400" style="width:33%"></div>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">4 مسجل من 12 طالب</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <p class="text-sm text-slate-500 mb-1">نسبة الاهتمام</p>
+              <p class="text-3xl font-black text-amber-600">42%</p>
+            </div>
+            <div class="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center">
+              <i class="fas fa-heart text-amber-600 text-xl"></i>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill bg-gradient-to-r from-amber-500 to-amber-400" style="width:42%"></div>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">5 مهتم من 12 طالب</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <p class="text-sm text-slate-500 mb-1">نسبة الاستجابة</p>
+              <p class="text-3xl font-black text-emerald-600">67%</p>
+            </div>
+            <div class="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center">
+              <i class="fas fa-phone-alt text-emerald-600 text-xl"></i>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill bg-gradient-to-r from-emerald-500 to-emerald-400" style="width:67%"></div>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">8 مستجيب من 12 طالب</p>
+        </div>
+      </div>
+
+      <!-- Status Breakdown -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm mb-5">
+        <h3 class="font-bold text-slate-700 mb-5">توزيع حالات الطلاب</h3>
+        <div class="space-y-4" id="status-breakdown"></div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+          <i class="fas fa-phone text-blue-600 mb-2"></i>
+          <p class="text-2xl font-black text-blue-800" id="rep-calls">8</p>
+          <p class="text-xs text-blue-600">مكالمات منجزة</p>
+        </div>
+        <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 border border-emerald-200">
+          <i class="fas fa-user-check text-emerald-600 mb-2"></i>
+          <p class="text-2xl font-black text-emerald-800" id="rep-reg">4</p>
+          <p class="text-xs text-emerald-600">طلاب مسجلون</p>
+        </div>
+        <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4 border border-amber-200">
+          <i class="fas fa-bullhorn text-amber-600 mb-2"></i>
+          <p class="text-2xl font-black text-amber-800" id="rep-campaigns">2</p>
+          <p class="text-xs text-amber-600">حملات نشطة</p>
+        </div>
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+          <i class="fas fa-star text-purple-600 mb-2"></i>
+          <p class="text-2xl font-black text-purple-800" id="rep-interested">5</p>
+          <p class="text-xs text-purple-600">مهتمون بالبرنامج</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============= GUIDE PAGE ============= -->
+    <div id="page-guide" class="page">
+      <div class="mb-6">
+        <h2 class="text-xl font-black text-slate-800">دليل الاستخدام</h2>
+        <p class="text-sm text-slate-500">تعلّم كيفية استخدام النظام بخطوات بسيطة</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="guide-step">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-user-plus text-blue-600 text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-800">كيفية إضافة طالب</h3>
+              <p class="text-xs text-slate-400">خطوات سريعة وسهلة</p>
+            </div>
+          </div>
+          <ol class="space-y-2">
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">1</span><span>اذهب إلى صفحة <strong>الطلاب</strong> من القائمة الجانبية</span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">2</span><span>اضغط على زر <strong>"إضافة طالب جديد"</strong></span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span><span>أدخل بيانات الطالب كاملة في النموذج</span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span><span>اضغط <strong>"حفظ"</strong> لإضافة الطالب</span></li>
+          </ol>
+        </div>
+
+        <div class="guide-step">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-bullhorn text-purple-600 text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-800">كيفية إنشاء حملة</h3>
+              <p class="text-xs text-slate-400">إدارة حملات التواصل</p>
+            </div>
+          </div>
+          <ol class="space-y-2">
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-purple-100 text-purple-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">1</span><span>انتقل إلى صفحة <strong>الحملات</strong></span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-purple-100 text-purple-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">2</span><span>اضغط <strong>"إنشاء حملة جديدة"</strong></span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-purple-100 text-purple-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span><span>أدخل اسم الحملة وتاريخها وملاحظاتها</span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-purple-100 text-purple-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span><span>افتح الحملة لتحديد حالة كل طالب</span></li>
+          </ol>
+        </div>
+
+        <div class="guide-step">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-phone-alt text-emerald-600 text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-800">كيفية متابعة الطلاب</h3>
+              <p class="text-xs text-slate-400">تتبع حالة كل طالب</p>
+            </div>
+          </div>
+          <ol class="space-y-2">
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-emerald-100 text-emerald-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">1</span><span>اذهب إلى صفحة <strong>المتابعات</strong></span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-emerald-100 text-emerald-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">2</span><span>ستجد قائمة الطلاب المطلوب متابعتهم</span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-emerald-100 text-emerald-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span><span>اضغط زر <strong>"اتصال"</strong> للتواصل مع الطالب</span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-emerald-100 text-emerald-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span><span>دوّن ملاحظات المتابعة بعد الاتصال</span></li>
+          </ol>
+        </div>
+
+        <div class="guide-step">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-tag text-amber-600 text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-800">كيفية تسجيل حالة الرد</h3>
+              <p class="text-xs text-slate-400">تحديث حالة كل طالب</p>
+            </div>
+          </div>
+          <ol class="space-y-2">
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-amber-100 text-amber-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">1</span><span>افتح الحملة المطلوبة من صفحة <strong>الحملات</strong></span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-amber-100 text-amber-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">2</span><span>ابحث عن الطالب في القائمة</span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-amber-100 text-amber-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span><span>اختر الحالة المناسبة من <strong>القائمة المنسدلة</strong></span></li>
+            <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-amber-100 text-amber-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span><span>أضف ملاحظة إذا لزم الأمر</span></li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Status Legend -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm mt-5">
+        <h3 class="font-bold text-slate-700 mb-4">دليل الحالات</h3>
+        <div class="flex flex-wrap gap-3">
+          <span class="badge badge-interested flex items-center gap-2"><i class="fas fa-check-circle text-xs"></i> مهتم</span>
+          <span class="badge badge-hesitant flex items-center gap-2"><i class="fas fa-question-circle text-xs"></i> متردد</span>
+          <span class="badge badge-not-interested flex items-center gap-2"><i class="fas fa-times-circle text-xs"></i> غير مهتم</span>
+          <span class="badge badge-call-later flex items-center gap-2"><i class="fas fa-clock text-xs"></i> اتصل لاحقًا</span>
+          <span class="badge badge-no-answer flex items-center gap-2"><i class="fas fa-phone-slash text-xs"></i> لم يرد</span>
+          <span class="badge badge-registered flex items-center gap-2"><i class="fas fa-star text-xs"></i> تم التسجيل</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end p-8 -->
+</div><!-- end main-content -->
+
+<!-- ===== ADD STUDENT MODAL ===== -->
+<div class="modal-overlay" id="modal-student">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h3 class="text-xl font-black text-slate-800" id="modal-student-title">إضافة طالب جديد</h3>
+        <p class="text-sm text-slate-400">أدخل بيانات الطالب بالكامل</p>
+      </div>
+      <button onclick="closeModal('modal-student')" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-slate-500 transition-all">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="form-label">اسم الطالب <span class="text-red-500">*</span></label>
+        <input type="text" id="s-name" class="form-input" placeholder="مثال: أحمد محمد الزهراني"/>
+      </div>
+      <div>
+        <label class="form-label">رقم هاتف الطالب <span class="text-red-500">*</span></label>
+        <input type="text" id="s-phone" class="form-input" placeholder="05xxxxxxxx"/>
+      </div>
+      <div>
+        <label class="form-label">هاتف ولي الأمر</label>
+        <input type="text" id="s-parent-phone" class="form-input" placeholder="05xxxxxxxx"/>
+      </div>
+      <div>
+        <label class="form-label">الصف الدراسي</label>
+        <select id="s-class" class="form-input">
+          <option value="">اختر الصف</option>
+          <option>الصف التاسع</option>
+          <option>الصف العاشر</option>
+          <option>الصف الحادي عشر</option>
+          <option>الصف الثاني عشر</option>
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <label class="form-label">المدرسة</label>
+        <input type="text" id="s-school" class="form-input" placeholder="اسم المدرسة"/>
+      </div>
+      <div class="md:col-span-2">
+        <label class="form-label">ملاحظات</label>
+        <textarea id="s-notes" class="form-input" rows="3" placeholder="أي ملاحظات إضافية..."></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="saveStudent()" class="btn-primary flex-1 justify-center">
+        <i class="fas fa-save"></i> حفظ الطالب
+      </button>
+      <button onclick="closeModal('modal-student')" class="flex-1 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
+        إلغاء
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD CAMPAIGN MODAL ===== -->
+<div class="modal-overlay" id="modal-campaign">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h3 class="text-xl font-black text-slate-800">إنشاء حملة جديدة</h3>
+        <p class="text-sm text-slate-400">حدد تفاصيل الحملة</p>
+      </div>
+      <button onclick="closeModal('modal-campaign')" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-slate-500 transition-all">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="form-label">اسم الحملة <span class="text-red-500">*</span></label>
+        <input type="text" id="c-name" class="form-input" placeholder="مثال: حملة المراجعة النهائية"/>
+      </div>
+      <div>
+        <label class="form-label">تاريخ الحملة</label>
+        <input type="date" id="c-date" class="form-input"/>
+      </div>
+      <div>
+        <label class="form-label">ملاحظات الحملة</label>
+        <textarea id="c-notes" class="form-input" rows="3" placeholder="أهداف ونقاط الحملة..."></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="saveCampaign()" class="btn-primary flex-1 justify-center">
+        <i class="fas fa-bullhorn"></i> إنشاء الحملة
+      </button>
+      <button onclick="closeModal('modal-campaign')" class="flex-1 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
+        إلغاء
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DELETE CONFIRM MODAL ===== -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal-box" style="max-width:400px">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-trash-alt text-red-500 text-2xl"></i>
+      </div>
+      <h3 class="text-lg font-black text-slate-800 mb-2">تأكيد الحذف</h3>
+      <p class="text-sm text-slate-500">هل أنت متأكد من حذف هذا الطالب؟ لا يمكن التراجع عن هذا الإجراء.</p>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="confirmDelete()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors">
+        نعم، احذف
+      </button>
+      <button onclick="closeModal('modal-delete')" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
+        إلغاء
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="./script.js"></script>
+</body>
+</html>
