@@ -702,6 +702,9 @@
             <h3 class="font-bold text-lg text-slate-800" id="campaign-detail-name"></h3>
             <p class="text-sm text-slate-500" id="campaign-detail-date"></p>
           </div>
+          <button id="sync-campaign-btn" class="btn-primary text-xs mr-auto hidden" onclick="syncMissingStudents()">
+            <i class="fas fa-user-plus"></i> إضافة الطلاب الجدد
+          </button>
         </div>
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div class="overflow-x-auto">
@@ -1195,7 +1198,7 @@ function applyUserPermissions() {
   if (!currentUser) return;
   
   // Hide/Show elements based on role
-  const isAdmin = currentUser.username === 'wael';
+  const isAdmin = currentUser.role === 'مدير النظام';
   
   const resetBtn = document.getElementById('nav-reset');
   const usersBtn = document.getElementById('nav-users');
@@ -1258,12 +1261,22 @@ function renderUsers() {
         </div>
         
         <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">اسم المستخدم (Login)</label>
+              <input type="text" id="username-${username}" value="${username}" class="form-input mb-3" placeholder="مثال: wael"/>
+            </div>
+            <div>
+              <label class="form-label">الاسم الكامل</label>
+              <input type="text" id="name-${username}" value="${data.name}" class="form-input mb-3" placeholder="الاسم الذي سيظهر"/>
+            </div>
+          </div>
           <div>
             <label class="form-label">تعديل كلمة المرور</label>
             <div class="flex gap-2">
               <input type="text" id="pass-${username}" value="${data.pass}" class="form-input" placeholder="كلمة المرور الجديدة"/>
-              <button onclick="updateUserPassword('${username}')" class="btn-primary">
-                <i class="fas fa-save"></i>
+              <button onclick="updateUserInfo('${username}')" class="btn-primary">
+                <i class="fas fa-save"></i> حفظ التغييرات
               </button>
             </div>
           </div>
@@ -1275,23 +1288,44 @@ function renderUsers() {
   container.innerHTML = html;
 }
 
-function updateUserPassword(username) {
-  const newPass = document.getElementById(`pass-${username}`).value.trim();
-  if (!newPass) {
-    showToast('يرجى إدخال كلمة مرور صالحة', 'error');
+function updateUserInfo(oldUsername) {
+  const newUsername = document.getElementById(`username-${oldUsername}`).value.trim().toLowerCase();
+  const newName = document.getElementById(`name-${oldUsername}`).value.trim();
+  const newPass = document.getElementById(`pass-${oldUsername}`).value.trim();
+  
+  if (!newUsername || !newName || !newPass) {
+    showToast('يرجى ملء جميع الحقول', 'error');
+    return;
+  }
+
+  // Check if username is taken
+  if (newUsername !== oldUsername && appUsers[newUsername]) {
+    showToast('اسم المستخدم هذا موجود بالفعل لموظف آخر', 'error');
     return;
   }
   
-  appUsers[username].pass = newPass;
-  saveUsersToStorage();
-  addLog('تعديل كلمة مرور', `عدل كلمة مرور المستخدم: ${appUsers[username].name}`);
-  showToast(`تم تحديث كلمة المرور للمستخدم ${appUsers[username].name} بنجاح`, 'success');
-  
-  // If the current user updated their own password, update the session
-  if (currentUser.username === username) {
-    currentUser.pass = newPass;
-    sessionStorage.setItem('logged_in_user', JSON.stringify(currentUser));
+  const userData = { ...appUsers[oldUsername], name: newName, pass: newPass };
+  const oldName = appUsers[oldUsername].name;
+
+  if (newUsername !== oldUsername) {
+    delete appUsers[oldUsername];
+    appUsers[newUsername] = userData;
+  } else {
+    appUsers[oldUsername] = userData;
   }
+  
+  saveUsersToStorage();
+  addLog('تحديث بيانات مستخدم', `عدل بيانات الموظف: ${oldName} (الاسم: ${newName}، الحساب: ${newUsername})`);
+  showToast('تم تحديث البيانات بنجاح', 'success');
+  
+  // If editing self
+  if (currentUser.username === oldUsername) {
+    currentUser = { ...currentUser, ...userData, username: newUsername };
+    sessionStorage.setItem('logged_in_user', JSON.stringify(currentUser));
+    applyUserPermissions();
+  }
+  
+  renderUsers();
 }
 
 // ---- STORAGE ----
@@ -1354,7 +1388,7 @@ const pageTitles = {
 function navigate(page) {
   // Check permission
   const adminOnly = ['users', 'logs'];
-  if (adminOnly.includes(page) && currentUser.username !== 'wael') {
+  if (adminOnly.includes(page) && currentUser.role !== 'مدير النظام') {
     showToast('عذراً، لا تملك صلاحية الوصول لهذه الصفحة', 'error');
     return;
   }
@@ -1421,7 +1455,7 @@ function getStatusBadge(status) {
 // ---- STATS ----
 function calcStats() {
   const total = students.length;
-  const contacted = students.filter(s => s.status !== 'لم يرد').length;
+  const contacted = students.filter(s => s.status && s.status !== 'لم يرد' && s.status !== 'لم يتم تحديد الحالة').length;
   const interested = students.filter(s => s.status === 'مهتم').length;
   const registered = students.filter(s => s.status === 'تم التسجيل').length;
   const noAnswer = students.filter(s => s.status === 'لم يرد').length;
@@ -1599,7 +1633,9 @@ function saveStudent() {
   closeModal('modal-student');
   saveToStorage();
   renderStudents();
+  if (currentCampaignId) renderCampaignStudents(currentCampaignId);
   updateStats();
+  renderDashboard();
 }
 
 // ---- DELETE ----
@@ -1689,6 +1725,18 @@ function renderCampaignStudents(cid) {
   const tbody = document.getElementById('campaign-students-table');
   const cs = campaignStudents[cid] || [];
 
+  // Toggle sync button if there are students in system not in this campaign
+  const syncBtn = document.getElementById('sync-campaign-btn');
+  if (syncBtn) {
+    const missingCount = students.filter(s => !cs.find(x => x.studentId === s.id)).length;
+    if (missingCount > 0 && cs.length > 0) {
+      syncBtn.classList.remove('hidden');
+      syncBtn.innerHTML = `<i class="fas fa-user-plus ml-1"></i> إضافة ${missingCount} طلاب بانتظار التوزيع`;
+    } else {
+      syncBtn.classList.add('hidden');
+    }
+  }
+
   tbody.innerHTML = cs.length ? cs.map(entry => {
     const s = students.find(x => x.id === entry.studentId);
     if (!s) return '';
@@ -1749,7 +1797,12 @@ function addAllStudentsToCampaign(cid) {
   
   saveToStorage();
   renderCampaignStudents(cid);
+  updateStats();
   showToast(`تم إضافة ${newEntries.length} طالب إلى الحملة`, 'success');
+}
+
+function syncMissingStudents() {
+  if (currentCampaignId) addAllStudentsToCampaign(currentCampaignId);
 }
 
 function hideCampaignDetail() {
