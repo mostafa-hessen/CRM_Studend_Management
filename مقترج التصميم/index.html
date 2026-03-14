@@ -33,6 +33,11 @@
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
     /* Sidebar */
     #sidebar {
       width: 260px;
@@ -362,9 +367,47 @@
       #sidebar.open { transform: translateX(0); }
       #main-content { margin-right: 0; }
     }
+    /* Login Overlay */
+    #login-overlay {
+      position: fixed; inset: 0; background: #0f172a;
+      z-index: 1000; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    }
+    .login-box {
+      background: #fff; border-radius: 24px; padding: 40px; width: 100%; max-width: 400px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center;
+    }
+    .login-input {
+      width: 100%; padding: 14px; margin-bottom: 20px; border: 2px solid #e2e8f0;
+      border-radius: 12px; outline: none; transition: all 0.2s; font-family: 'Cairo', sans-serif;
+    }
+    .login-input:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,0.1); }
+    .login-btn {
+      width: 100%; padding: 14px; background: #2563eb; color: #fff; border: none;
+      border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+    .login-btn:hover { background: #1d4ed8; transform: translateY(-2px); }
+
+    .hidden-user-element { display: none !important; }
   </style>
 </head>
 <body>
+
+<!-- Login Overlay -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-6 shadow-xl">
+      <i class="fas fa-lock"></i>
+    </div>
+    <h2 class="text-2xl font-black text-slate-800 mb-2">تسجيل الدخول</h2>
+    <p class="text-slate-500 text-sm mb-8">أهلاً بك، الرجاء إدخال بيانات الدخول</p>
+    <div>
+      <input type="text" id="login-username" class="login-input text-center" placeholder="اسم المستخدم"/>
+      <input type="password" id="login-password" class="login-input text-center" placeholder="كلمة المرور"/>
+      <button onclick="handleLogin()" class="login-btn">دخول للنظام</button>
+    </div>
+  </div>
+</div>
 
 <!-- Toast Container -->
 <div id="toast-container"></div>
@@ -383,7 +426,7 @@
     </div>
   </div>
 
-  <nav class="flex-1 py-4">
+  <nav class="flex-1 py-4 overflow-y-auto custom-scrollbar">
     <p class="text-slate-500 text-xs font-bold px-8 mb-3 uppercase tracking-widest">القائمة الرئيسية</p>
     <a class="nav-item active" onclick="navigate('dashboard')">
       <span class="icon"><i class="fas fa-chart-pie"></i></span>
@@ -406,20 +449,36 @@
       <span class="icon"><i class="fas fa-chart-bar"></i></span>
       <span>التقارير</span>
     </a>
+    <a class="nav-item" onclick="navigate('classes')">
+      <span class="icon"><i class="fas fa-layer-group"></i></span>
+      <span>الصفوف الدراسية</span>
+    </a>
     <a class="nav-item" onclick="navigate('guide')">
       <span class="icon"><i class="fas fa-book-open"></i></span>
       <span>دليل الاستخدام</span>
     </a>
+    <a id="nav-logs" class="nav-item hidden-user-element" onclick="navigate('logs')">
+      <span class="icon"><i class="fas fa-history"></i></span>
+      <span>سجل النشاطات</span>
+    </a>
+    <a id="nav-users" class="nav-item hidden-user-element" onclick="navigate('users')">
+      <span class="icon"><i class="fas fa-user-shield"></i></span>
+      <span>إدارة المستخدمين</span>
+    </a>
+    <a id="nav-reset" class="nav-item text-red-400 hover:text-red-500 hover:bg-red-500/10 hidden-user-element" onclick="resetApp()">
+      <span class="icon bg-red-500/10"><i class="fas fa-trash-alt text-red-500"></i></span>
+      <span>تصفير البرنامج</span>
+    </a>
   </nav>
 
-  <div class="p-5 border-t border-slate-700/50">
+  <div class="p-5 border-t border-slate-700/50 flex-shrink-0">
     <div class="flex items-center gap-3">
-      <img src="https://i.ibb.co/DgWdcYp8/Whats-App-Image-2026-03-13-at-15-47-40.jpg"
+      <img id="sidebar-user-avatar" src="https://i.ibb.co/DgWdcYp8/Whats-App-Image-2026-03-13-at-15-47-40.jpg"
            onerror="this.src='https://ui-avatars.com/api/?name=WA&background=2563eb&color=fff&size=40'"
            class="w-9 h-9 rounded-full object-cover border-2 border-slate-600" alt="Profile"/>
       <div>
-        <p class="text-white text-xs font-bold">د. وائل العبد</p>
-        <p class="text-slate-400 text-xs">خبير اللغة العربية</p>
+        <p id="sidebar-user-name" class="text-white text-xs font-bold">د. وائل العبد</p>
+        <p id="sidebar-user-role" class="text-slate-400 text-xs">خبير اللغة العربية</p>
       </div>
       <div class="mr-auto w-2 h-2 bg-emerald-400 rounded-full"></div>
     </div>
@@ -440,17 +499,15 @@
       </div>
     </div>
     <div class="flex items-center gap-3">
-      <div class="relative">
-        <input type="text" placeholder="بحث سريع..." class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm pr-10 outline-none focus:border-blue-400 w-52 hidden md:block" style="font-family:'Cairo',sans-serif"/>
-        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm hidden md:block"></i>
-      </div>
-      <button class="relative text-slate-500 hover:text-blue-600 transition-colors">
-        <i class="fas fa-bell text-lg"></i>
-        <span class="absolute -top-1 -left-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-content-center text-center leading-4">3</span>
+      <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors mx-1" title="تسجيل الخروج">
+        <i class="fas fa-power-off text-lg"></i>
       </button>
-      <img src="https://i.ibb.co/DgWdcYp8/Whats-App-Image-2026-03-13-at-15-47-40.jpg"
-           onerror="this.src='https://ui-avatars.com/api/?name=WA&background=2563eb&color=fff&size=40'"
-           class="w-9 h-9 rounded-full object-cover border-2 border-blue-200 cursor-pointer" alt="Profile"/>
+      <div class="flex items-center gap-2 mr-2">
+        <span id="topbar-user-name" class="text-xs font-bold text-slate-700 hidden md:block">الشيخ وائل</span>
+        <img id="topbar-user-avatar" src="https://i.ibb.co/DgWdcYp8/Whats-App-Image-2026-03-13-at-15-47-40.jpg"
+             onerror="this.src='https://ui-avatars.com/api/?name=WA&background=2563eb&color=fff&size=40'"
+             class="w-9 h-9 rounded-full object-cover border-2 border-blue-200 cursor-pointer" alt="Profile"/>
+      </div>
     </div>
   </header>
 
@@ -578,12 +635,8 @@
           <input type="text" placeholder="بحث باسم الطالب..." class="form-input pr-10" oninput="filterStudents(this.value)"/>
           <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
         </div>
-        <select class="form-input w-auto" onchange="filterByClass(this.value)">
+        <select id="filter-class" class="form-input w-auto" onchange="filterByClass(this.value)">
           <option value="">جميع الصفوف</option>
-          <option>الصف التاسع</option>
-          <option>الصف العاشر</option>
-          <option>الصف الحادي عشر</option>
-          <option>الصف الثاني عشر</option>
         </select>
       </div>
 
@@ -606,6 +659,24 @@
           </table>
         </div>
       </div>
+    </div>
+
+    <!-- ============= CLASSES PAGE ============= -->
+    <div id="page-classes" class="page">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-800">إدارة الصفوف الدراسية</h2>
+          <p class="text-sm text-slate-500">إضافة وتعديل الصفوف الدراسية المتاحة</p>
+        </div>
+        <div class="flex gap-2">
+          <input type="text" id="new-class-name" placeholder="اسم الصف الجديد..." class="form-input w-48"/>
+          <button class="btn-primary" onclick="addClass()">
+            <i class="fas fa-plus"></i> إضافة صف
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="classes-list"></div>
     </div>
 
     <!-- ============= CAMPAIGNS PAGE ============= -->
@@ -699,7 +770,7 @@
           <div class="progress-bar">
             <div class="progress-fill bg-gradient-to-r from-blue-500 to-blue-400" style="width:33%"></div>
           </div>
-          <p class="text-xs text-slate-400 mt-2">4 مسجل من 12 طالب</p>
+          <p class="text-xs text-slate-400 mt-2" id="kpi-conv-text">0 مسجل من 0 طالب</p>
         </div>
 
         <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
@@ -715,7 +786,7 @@
           <div class="progress-bar">
             <div class="progress-fill bg-gradient-to-r from-amber-500 to-amber-400" style="width:42%"></div>
           </div>
-          <p class="text-xs text-slate-400 mt-2">5 مهتم من 12 طالب</p>
+          <p class="text-xs text-slate-400 mt-2" id="kpi-int-text">0 مهتم من 0 طالب</p>
         </div>
 
         <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
@@ -731,7 +802,7 @@
           <div class="progress-bar">
             <div class="progress-fill bg-gradient-to-r from-emerald-500 to-emerald-400" style="width:67%"></div>
           </div>
-          <p class="text-xs text-slate-400 mt-2">8 مستجيب من 12 طالب</p>
+          <p class="text-xs text-slate-400 mt-2" id="kpi-resp-text">0 مستجيب من 0 طالب</p>
         </div>
       </div>
 
@@ -861,6 +932,44 @@
       </div>
     </div>
 
+    <!-- ============= USER MANAGEMENT PAGE ============= -->
+    <div id="page-users" class="page">
+      <div class="mb-6">
+        <h2 class="text-xl font-black text-slate-800">إدارة المستخدمين</h2>
+        <p class="text-sm text-slate-500">التحكم في مستخدمي النظام وكلمات المرور الخاصة بهم</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="users-list">
+        <!-- Users will be injected here -->
+      </div>
+    </div>
+
+    <!-- ============= LOGS PAGE ============= -->
+    <div id="page-logs" class="page">
+      <div class="mb-6">
+        <h2 class="text-xl font-black text-slate-800">سجل النشاطات</h2>
+        <p class="text-sm text-slate-500">تتبع جميع العمليات التي تمت على النظام</p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>المستخدم</th>
+                <th>الإجراء</th>
+                <th>التفاصيل</th>
+                <th>الوقت</th>
+              </tr>
+            </thead>
+            <tbody id="logs-table">
+              <!-- Logs will be injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div><!-- end p-8 -->
 </div><!-- end main-content -->
 
@@ -890,16 +999,10 @@
         <label class="form-label">هاتف ولي الأمر</label>
         <input type="text" id="s-parent-phone" class="form-input" placeholder="05xxxxxxxx"/>
       </div>
-      <div>
-        <label class="form-label">الصف الدراسي</label>
-        <select id="s-class" class="form-input">
-          <option value="">اختر الصف</option>
-          <option>الصف التاسع</option>
-          <option>الصف العاشر</option>
-          <option>الصف الحادي عشر</option>
-          <option>الصف الثاني عشر</option>
-        </select>
-      </div>
+            <div>
+              <label class="form-label">الصف الدراسي</label>
+              <select id="s-class" class="form-input"></select>
+            </div>
       <div class="md:col-span-2">
         <label class="form-label">المدرسة</label>
         <input type="text" id="s-school" class="form-input" placeholder="اسم المدرسة"/>
@@ -981,6 +1084,1051 @@
   </div>
 </div>
 
-<script src="./script.js"></script>
+<script>
+  // ============================================
+// Student Campaign Management System
+// Arabic RTL - Full Interactive Prototype
+// ============================================
+
+// ---- STATE ----
+let students = [
+];
+
+let campaigns = [
+];
+
+let campaignStudents = {};
+let classes = [];
+let nextStudentId = 1;
+let nextCampaignId = 1;
+let nextClassId = 1;
+let editingStudentId = null;
+let deletingStudentId = null;
+let filteredStudents = null;
+let currentCampaignId = null;
+let activityLogs = [];
+
+// ---- AUTH & USERS STATE ----
+let appUsers = {
+  'wael': { name: 'الشيخ وائل', role: 'مدير النظام', pass: '123456', avatar: 'https://i.ibb.co/DgWdcYp8/Whats-App-Image-2026-03-13-at-15-47-40.jpg' },
+  'sara': { name: 'سارة', role: 'موظفة', pass: '1234', avatar: '' },
+  'habiba': { name: 'حبيبة', role: 'موظفة', pass: '1234', avatar: '' }
+};
+let currentUser = null;
+
+function saveUsersToStorage() {
+  localStorage.setItem('student_system_users', JSON.stringify(appUsers));
+}
+
+function addLog(action, details) {
+  if (!currentUser) return;
+  const logEntry = {
+    user: currentUser.name,
+    username: currentUser.username,
+    action: action,
+    details: details,
+    time: new Date().toLocaleString('ar-SA')
+  };
+  activityLogs.unshift(logEntry);
+  if (activityLogs.length > 100) activityLogs.pop(); // Keep last 100
+  localStorage.setItem('student_system_logs', JSON.stringify(activityLogs));
+}
+
+function loadUsersFromStorage() {
+  const data = localStorage.getItem('student_system_users');
+  if (data) {
+    const parsed = JSON.parse(data);
+    appUsers = { ...appUsers, ...parsed };
+  }
+  
+  const logsData = localStorage.getItem('student_system_logs');
+  if (logsData) {
+    activityLogs = JSON.parse(logsData);
+  }
+}
+
+function handleLogin() {
+  const userIn = document.getElementById('login-username').value.trim();
+  const passIn = document.getElementById('login-password').value.trim();
+
+  if (!userIn || !passIn) {
+    showToast('يرجى إدخال اسم المستخدم وكلمة المرور', 'error');
+    return;
+  }
+
+  const user = appUsers[userIn];
+  if (user && user.pass === passIn) {
+    currentUser = { username: userIn, ...user };
+    sessionStorage.setItem('logged_in_user', JSON.stringify(currentUser));
+    applyUserPermissions();
+    document.getElementById('login-overlay').style.display = 'none';
+    showToast(`مرحباً بك ${user.name}`, 'success');
+    addLog('تسجيل دخول', 'دخل إلى النظام');
+    navigate('dashboard');
+  } else {
+    showToast('اسم المستخدم أو كلمة المرور غير صحيحة', 'error');
+  }
+}
+
+function logout() {
+  addLog('تسجيل خروج', 'خرج من النظام');
+  sessionStorage.removeItem('logged_in_user');
+  location.reload();
+}
+
+function checkAuth() {
+  const logged = sessionStorage.getItem('logged_in_user');
+  if (logged) {
+    currentUser = JSON.parse(logged);
+    // Refresh current user data from appUsers (in case password changed)
+    const freshData = appUsers[currentUser.username];
+    if (freshData) currentUser = { ...currentUser, ...freshData };
+    
+    document.getElementById('login-overlay').style.display = 'none';
+    applyUserPermissions();
+  } else {
+    document.getElementById('login-overlay').style.display = 'flex';
+  }
+}
+
+function applyUserPermissions() {
+  if (!currentUser) return;
+  
+  // Hide/Show elements based on role
+  const isAdmin = currentUser.username === 'wael';
+  
+  const resetBtn = document.getElementById('nav-reset');
+  const usersBtn = document.getElementById('nav-users');
+  const logsBtn = document.getElementById('nav-logs');
+  
+  if (isAdmin) {
+    resetBtn.classList.remove('hidden-user-element');
+    usersBtn.classList.remove('hidden-user-element');
+    logsBtn.classList.remove('hidden-user-element');
+  } else {
+    resetBtn.classList.add('hidden-user-element');
+    usersBtn.classList.add('hidden-user-element');
+    logsBtn.classList.add('hidden-user-element');
+  }
+
+  // Update Profile Info
+  document.getElementById('sidebar-user-name').textContent = currentUser.name;
+  document.getElementById('sidebar-user-role').textContent = currentUser.role;
+  document.getElementById('topbar-user-name').textContent = currentUser.name;
+  
+  const avatarElements = [document.getElementById('sidebar-user-avatar'), document.getElementById('topbar-user-avatar')];
+  avatarElements.forEach(el => {
+    if (el) {
+      if (currentUser.avatar) {
+        el.src = currentUser.avatar;
+      } else {
+        el.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=2563eb&color=fff&size=40`;
+      }
+    }
+  });
+
+  // Update Welcome Card in Dashboard
+  const welcomeTitle = document.querySelector('.welcome-card h2');
+  if (welcomeTitle) welcomeTitle.textContent = currentUser.name;
+  const welcomeRole = document.querySelector('.welcome-card p.font-semibold');
+  if (welcomeRole) welcomeRole.textContent = currentUser.role;
+  const welcomeImg = document.querySelector('.welcome-card img');
+  if (welcomeImg) {
+    if (currentUser.avatar) welcomeImg.src = currentUser.avatar;
+    else welcomeImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=1d4ed8&color=fff&size=100`;
+  }
+}
+
+function renderUsers() {
+  const container = document.getElementById('users-list');
+  let html = '';
+  
+  Object.entries(appUsers).forEach(([username, data]) => {
+    html += `
+      <div class="stat-card">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 text-xl">
+            <i class="fas fa-user"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-lg text-slate-800">${data.name}</h3>
+            <p class="text-xs text-slate-400 capitalize">${username}</p>
+          </div>
+          <span class="mr-auto badge ${username === 'wael' ? 'badge-registered' : 'badge-call-later'}">${data.role}</span>
+        </div>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="form-label">تعديل كلمة المرور</label>
+            <div class="flex gap-2">
+              <input type="text" id="pass-${username}" value="${data.pass}" class="form-input" placeholder="كلمة المرور الجديدة"/>
+              <button onclick="updateUserPassword('${username}')" class="btn-primary">
+                <i class="fas fa-save"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+function updateUserPassword(username) {
+  const newPass = document.getElementById(`pass-${username}`).value.trim();
+  if (!newPass) {
+    showToast('يرجى إدخال كلمة مرور صالحة', 'error');
+    return;
+  }
+  
+  appUsers[username].pass = newPass;
+  saveUsersToStorage();
+  addLog('تعديل كلمة مرور', `عدل كلمة مرور المستخدم: ${appUsers[username].name}`);
+  showToast(`تم تحديث كلمة المرور للمستخدم ${appUsers[username].name} بنجاح`, 'success');
+  
+  // If the current user updated their own password, update the session
+  if (currentUser.username === username) {
+    currentUser.pass = newPass;
+    sessionStorage.setItem('logged_in_user', JSON.stringify(currentUser));
+  }
+}
+
+// ---- STORAGE ----
+function saveToStorage() {
+  const data = {
+    students,
+    campaigns,
+    classes,
+    campaignStudents,
+    nextStudentId,
+    nextCampaignId,
+    nextClassId
+  };
+  localStorage.setItem('student_system_data', JSON.stringify(data));
+}
+
+function loadFromStorage() {
+  const data = localStorage.getItem('student_system_data');
+  if (data) {
+    const parsed = JSON.parse(data);
+    students = parsed.students || [];
+    campaigns = parsed.campaigns || [];
+    classes = parsed.classes || [];
+    campaignStudents = parsed.campaignStudents || {};
+    nextStudentId = parsed.nextStudentId || 1;
+    nextCampaignId = parsed.nextCampaignId || 1;
+    nextClassId = parsed.nextClassId || 1;
+    return true;
+  }
+  return false;
+}
+
+// Init campaign students
+function initCampaignStudents() {
+  campaigns.forEach(c => {
+    if (!campaignStudents[c.id]) {
+      campaignStudents[c.id] = students.map(s => ({ 
+        studentId: s.id, 
+        status: s.status || 'لم يرد', 
+        notes: '',
+        followupDate: s.followupDate || '' 
+      }));
+    }
+  });
+}
+
+// ---- NAVIGATION ----
+const pageTitles = {
+  dashboard: 'لوحة التحكم',
+  students: 'الطلاب',
+  campaigns: 'الحملات',
+  followups: 'المتابعات',
+  reports: 'التقارير',
+  classes: 'الصفوف الدراسية',
+  guide: 'دليل الاستخدام',
+  users: 'إدارة المستخدمين',
+  logs: 'سجل النشاطات'
+};
+
+function navigate(page) {
+  // Check permission
+  const adminOnly = ['users', 'logs'];
+  if (adminOnly.includes(page) && currentUser.username !== 'wael') {
+    showToast('عذراً، لا تملك صلاحية الوصول لهذه الصفحة', 'error');
+    return;
+  }
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(page)) {
+      n.classList.add('active');
+    }
+  });
+
+  document.getElementById('page-title').textContent = pageTitles[page] || '';
+
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'students') renderStudents();
+  if (page === 'campaigns') renderCampaigns();
+  if (page === 'followups') renderFollowups();
+  if (page === 'reports') renderReports();
+  if (page === 'classes') renderClasses();
+  if (page === 'users') renderUsers();
+  if (page === 'logs') renderLogs();
+
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ---- TOAST ----
+function showToast(message, type = 'info') {
+  const icons = { success: 'fa-check-circle text-emerald-500', error: 'fa-times-circle text-red-500', warning: 'fa-exclamation-circle text-amber-500', info: 'fa-info-circle text-blue-500' };
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i class="fas ${icons[type] || icons.info} text-lg"></i><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = 'toastOut 0.3s forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+// ---- STATUS HELPERS ----
+function getStatusBadge(status) {
+  const map = {
+    'مهتم': 'badge-interested',
+    'متردد': 'badge-hesitant',
+    'غير مهتم': 'badge-not-interested',
+    'اتصل لاحقًا': 'badge-call-later',
+    'لم يرد': 'badge-no-answer',
+    'تم التسجيل': 'badge-registered',
+    'لم يتم تحديد الحالة': 'badge-no-answer',
+  };
+  return `<span class="badge ${map[status] || 'badge-no-answer'}">${status}</span>`;
+}
+
+// ---- STATS ----
+function calcStats() {
+  const total = students.length;
+  const contacted = students.filter(s => s.status !== 'لم يرد').length;
+  const interested = students.filter(s => s.status === 'مهتم').length;
+  const registered = students.filter(s => s.status === 'تم التسجيل').length;
+  const noAnswer = students.filter(s => s.status === 'لم يرد').length;
+  return { total, contacted, interested, registered, noAnswer };
+}
+
+// ---- DASHBOARD ----
+function renderDashboard() {
+  const s = calcStats();
+  document.getElementById('stat-total').textContent = s.total;
+  document.getElementById('stat-contacted').textContent = s.contacted;
+  document.getElementById('stat-interested').textContent = s.interested;
+  document.getElementById('stat-registered').textContent = s.registered;
+  document.getElementById('stat-noanswer').textContent = s.noAnswer;
+  document.getElementById('dash-total').textContent = s.total;
+  document.getElementById('dash-registered').textContent = s.registered;
+
+  // Today follow-ups (show students with followupDate today or no-answer/call-later)
+  const today = new Date().toISOString().slice(0, 10);
+  let todayData = [];
+  
+  campaigns.forEach(c => {
+    const cs = campaignStudents[c.id] || [];
+    cs.forEach(entry => {
+      if (entry.status === 'لم يرد' || entry.status === 'اتصل لاحقًا' || entry.followupDate === today) {
+        const s = students.find(x => x.id === entry.studentId);
+        if (s) {
+          todayData.push({ ...s, campaignName: c.name, campaignStatus: entry.status });
+        }
+      }
+    });
+  });
+
+  // Unique students or unique campaign-student pairs? Let's go with unique campaign-student pairs but limit
+  const displayData = todayData.slice(0, 10);
+
+  document.getElementById('today-count').textContent = displayData.length + ' طلاب';
+
+  const tbody = document.getElementById('today-table');
+  tbody.innerHTML = displayData.length ? displayData.map(s => `
+    <tr>
+      <td><div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">${s.name[0]}</div>
+        <div>
+          <p class="font-medium">${s.name}</p>
+          <p class="text-[10px] text-slate-400"><i class="fas fa-bullhorn ml-1"></i>${s.campaignName}</p>
+        </div>
+      </div></td>
+      <td><a href="tel:${s.phone}" class="text-blue-600 hover:underline font-mono text-sm">${s.phone}</a></td>
+      <td><span class="text-slate-600 text-sm">${s.grade}</span></td>
+      <td>${getStatusBadge(s.campaignStatus)}</td>
+      <td>
+        <a href="tel:${s.phone}" class="btn-success text-xs py-1.5 px-3 inline-flex items-center gap-1">
+          <i class="fas fa-phone text-xs"></i> اتصال
+        </a>
+      </td>
+    </tr>
+  `).join('') : `<tr><td colspan="5" class="text-center py-8 text-slate-400"><i class="fas fa-check-circle text-2xl text-emerald-400 mb-2 block"></i>لا يوجد طلاب مجدولون اليوم</td></tr>`;
+}
+
+// ---- STUDENTS ----
+function renderStudents(data) {
+  const list = data || students;
+  const tbody = document.getElementById('students-table');
+  tbody.innerHTML = list.length ? list.map((s, i) => `
+    <tr>
+      <td class="text-slate-400 font-bold text-sm">${i + 1}</td>
+      <td>
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">${s.name[0]}</div>
+          <div>
+            <p class="font-semibold text-slate-800">${s.name}</p>
+            <p class="text-xs text-slate-400">${s.school}</p>
+          </div>
+        </div>
+      </td>
+      <td><a href="tel:${s.phone}" class="text-blue-600 hover:underline font-mono text-sm">${s.phone}</a></td>
+      <td class="text-sm text-slate-600 font-mono">${s.parentPhone || '—'}</td>
+      <td><span class="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-lg font-semibold">${s.grade}</span></td>
+      <td class="text-sm text-slate-600">${s.school}</td>
+      <td class="text-sm text-slate-500 max-w-xs truncate">${s.notes || '—'}</td>
+      <td>
+        <div class="flex gap-2">
+          <button onclick="editStudent(${s.id})" class="btn-edit text-xs"><i class="fas fa-edit ml-1"></i>تعديل</button>
+          <button onclick="openDeleteModal(${s.id})" class="btn-danger text-xs"><i class="fas fa-trash ml-1"></i>حذف</button>
+        </div>
+      </td>
+    </tr>
+  `).join('') : `<tr><td colspan="8" class="text-center py-10 text-slate-400"><i class="fas fa-users text-3xl mb-2 block text-slate-300"></i>لا يوجد طلاب</td></tr>`;
+}
+
+function filterStudents(val) {
+  const filtered = val ? students.filter(s =>
+    s.name.includes(val) || s.phone.includes(val) || s.school.includes(val)
+  ) : students;
+  renderStudents(filtered);
+}
+
+function filterByClass(val) {
+  const filtered = val ? students.filter(s => s.grade === val) : students;
+  renderStudents(filtered);
+}
+
+// ---- ADD / EDIT STUDENT ----
+function openAddStudentModal() {
+  editingStudentId = null;
+  document.getElementById('modal-student-title').textContent = 'إضافة طالب جديد';
+  ['s-name','s-phone','s-parent-phone','s-class','s-school','s-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  openModal('modal-student');
+}
+
+function editStudent(id) {
+  const s = students.find(x => x.id === id);
+  if (!s) return;
+  editingStudentId = id;
+  document.getElementById('modal-student-title').textContent = 'تعديل بيانات الطالب';
+  document.getElementById('s-name').value = s.name;
+  document.getElementById('s-phone').value = s.phone;
+  document.getElementById('s-parent-phone').value = s.parentPhone;
+  document.getElementById('s-class').value = s.grade;
+  document.getElementById('s-school').value = s.school;
+  document.getElementById('s-notes').value = s.notes;
+  openModal('modal-student');
+}
+
+function saveStudent() {
+  const name = document.getElementById('s-name').value.trim();
+  const phone = document.getElementById('s-phone').value.trim();
+  const parentPhone = document.getElementById('s-parent-phone').value.trim();
+  const grade = document.getElementById('s-class').value;
+  const school = document.getElementById('s-school').value.trim();
+  const notes = document.getElementById('s-notes').value.trim();
+
+  // Phone is still required because it must be unique and validated
+  if (!phone) { showToast('الرجاء إدخال رقم الهاتف', 'error'); return; }
+
+  // Fallback for empty name
+  const finalName = name || 'طالب جديد';
+  const finalGrade = grade || 'غير محدد';
+
+  // Phone validation Regex: 5-15 digits
+  const phoneRegex = /^[0-9]{5,15}$/;
+  if (!phoneRegex.test(phone)) {
+    showToast('رقم الهاتف غير صالح. يجب أن يكون بين 5 و 15 رقماً', 'error');
+    return;
+  }
+
+  // Duplicate phone check
+  const duplicate = students.find(s => s.phone === phone && s.id !== editingStudentId);
+  if (duplicate) {
+    showToast(`هذا الرقم مسجل مسبقاً للطالب: ${duplicate.name}`, 'error');
+    return;
+  }
+
+  if (editingStudentId) {
+    const idx = students.findIndex(s => s.id === editingStudentId);
+    if (idx > -1) {
+      const oldName = students[idx].name;
+      students[idx] = { ...students[idx], name: finalName, phone, parentPhone, grade: finalGrade, school, notes };
+      addLog('تعديل طالب', `عدل بيانات الطالب: ${oldName}`);
+      showToast('تم تحديث بيانات الطالب بنجاح ✓', 'success');
+    }
+  } else {
+    // Initial status: لم يتم تحديد الحالة (Not Specified)
+    const newStudent = { id: nextStudentId++, name: finalName, phone, parentPhone, grade: finalGrade, school, notes, status: 'لم يتم تحديد الحالة', followupDate: '' };
+    students.push(newStudent);
+    addLog('إضافة طالب', `أضاف طالبا جديدا: ${finalName}`);
+    // Note: Student is NOT added to any campaigns automatically anymore
+    showToast('تم إضافة الطالب بنجاح ✓', 'success');
+  }
+
+  closeModal('modal-student');
+  saveToStorage();
+  renderStudents();
+  updateStats();
+}
+
+// ---- DELETE ----
+function openDeleteModal(id) {
+  deletingStudentId = id;
+  openModal('modal-delete');
+}
+
+function confirmDelete() {
+  if (!deletingStudentId) return;
+  const s = students.find(x => x.id === deletingStudentId);
+  const studentName = s ? s.name : 'مجهول';
+  
+  students = students.filter(s => s.id !== deletingStudentId);
+  Object.keys(campaignStudents).forEach(cid => {
+    campaignStudents[cid] = campaignStudents[cid].filter(x => x.studentId !== deletingStudentId);
+  });
+  closeModal('modal-delete');
+  saveToStorage();
+  addLog('حذف طالب', `حذف الطالب: ${studentName}`);
+  renderStudents();
+  updateStats();
+  if (currentCampaignId) renderCampaignStudents(currentCampaignId);
+  showToast('تم حذف الطالب بنجاح', 'warning');
+  deletingStudentId = null;
+}
+
+// ---- CAMPAIGNS ----
+function renderCampaigns() {
+  const container = document.getElementById('campaigns-list');
+  document.getElementById('campaign-detail').classList.add('hidden');
+  container.classList.remove('hidden');
+
+  const colorPairs = [
+    ['bg-blue-50', 'text-blue-700', 'bg-blue-100'],
+    ['bg-purple-50', 'text-purple-700', 'bg-purple-100'],
+    ['bg-emerald-50', 'text-emerald-700', 'bg-emerald-100'],
+    ['bg-amber-50', 'text-amber-700', 'bg-amber-100'],
+  ];
+
+  container.innerHTML = campaigns.length ? campaigns.map((c, i) => {
+    const colors = colorPairs[i % colorPairs.length];
+    const total = campaignStudents[c.id] ? campaignStudents[c.id].length : 0;
+    const registered = campaignStudents[c.id] ? campaignStudents[c.id].filter(x => x.status === 'تم التسجيل').length : 0;
+    return `
+      <div class="campaign-card cursor-pointer" onclick="openCampaignDetail(${c.id})">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-11 h-11 ${colors[2]} rounded-xl flex items-center justify-center">
+            <i class="fas fa-bullhorn ${colors[1]}"></i>
+          </div>
+          <span class="text-xs text-slate-400">${c.date}</span>
+        </div>
+        <h3 class="font-bold text-slate-800 mb-1">${c.name}</h3>
+        <p class="text-xs text-slate-500 mb-4 line-clamp-2">${c.notes || 'لا توجد ملاحظات'}</p>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-slate-500">${total} طالب</span>
+          <span class="${colors[2]} ${colors[1]} px-2 py-1 rounded-lg font-bold">${registered} مسجل</span>
+        </div>
+        <div class="progress-bar mt-3">
+          <div class="progress-fill bg-gradient-to-r from-blue-500 to-blue-400" style="width:${total ? Math.round(registered/total*100) : 0}%"></div>
+        </div>
+      </div>
+    `;
+  }).join('') : `<div class="col-span-3 text-center py-12 text-slate-400"><i class="fas fa-bullhorn text-4xl mb-3 block text-slate-300"></i>لا توجد حملات. أنشئ أول حملة الآن!</div>`;
+}
+
+function openCampaignDetail(id) {
+  currentCampaignId = id;
+  const campaign = campaigns.find(c => c.id === id);
+  if (!campaign) return;
+
+  document.getElementById('campaigns-list').classList.add('hidden');
+  document.getElementById('campaign-detail').classList.remove('hidden');
+  document.getElementById('campaign-detail-name').textContent = campaign.name;
+  document.getElementById('campaign-detail-date').textContent = campaign.date;
+
+  if (!campaignStudents[id]) {
+    // When opening a campaign, we might want to see only previously assigned students 
+    // or add all students. Given the request, we keep it empty or assigned manually.
+    campaignStudents[id] = []; 
+  }
+
+  renderCampaignStudents(id);
+}
+
+function renderCampaignStudents(cid) {
+  const tbody = document.getElementById('campaign-students-table');
+  const cs = campaignStudents[cid] || [];
+
+  tbody.innerHTML = cs.length ? cs.map(entry => {
+    const s = students.find(x => x.id === entry.studentId);
+    if (!s) return '';
+    return `
+      <tr>
+        <td>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">${s.name[0]}</div>
+            <span class="font-medium text-sm">${s.name}</span>
+          </div>
+        </td>
+        <td><a href="tel:${s.phone}" class="text-blue-600 text-sm font-mono hover:underline">${s.phone}</a></td>
+        <td>
+          <select class="status-select" onchange="updateCampaignStudentStatus(${cid}, ${s.id}, this.value)">
+            ${['مهتم','متردد','غير مهتم','اتصل لاحقًا','لم يرد','تم التسجيل', 'لم يتم تحديد الحالة'].map(opt =>
+              `<option ${entry.status === opt ? 'selected' : ''}>${opt}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td>
+          <input type="date" class="form-input text-xs py-1.5" value="${entry.followupDate || ''}"
+            onchange="updateCampaignStudentFollowupDate(${cid}, ${s.id}, this.value)"
+            style="width:130px"/>
+        </td>
+        <td>
+          <input type="text" class="form-input text-xs py-1.5" placeholder="ملاحظة..." value="${entry.notes}"
+            onchange="updateCampaignStudentNotes(${cid}, ${s.id}, this.value)"
+            style="width:150px"/>
+        </td>
+      </tr>
+    `;
+  }).join('') : `
+    <tr>
+      <td colspan="5" class="text-center py-12">
+        <p class="text-slate-400 mb-4">لا يوجد طلاب في هذه الحملة حالياً</p>
+        <button onclick="addAllStudentsToCampaign(${cid})" class="btn-primary text-xs">
+          <i class="fas fa-users"></i> إضافة جميع الطلاب الحاليين لهذه الحملة
+        </button>
+      </td>
+    </tr>`;
+}
+
+function addAllStudentsToCampaign(cid) {
+  if (!confirm('هل تريد إضافة جميع الطلاب المسجلين حالياً إلى هذه الحملة؟')) return;
+  
+  const existingIds = (campaignStudents[cid] || []).map(x => x.studentId);
+  const newEntries = students
+    .filter(s => !existingIds.includes(s.id))
+    .map(s => ({
+      studentId: s.id,
+      status: s.status || 'لم يتم تحديد الحالة',
+      notes: '',
+      followupDate: ''
+    }));
+    
+  if (!campaignStudents[cid]) campaignStudents[cid] = [];
+  campaignStudents[cid] = [...campaignStudents[cid], ...newEntries];
+  
+  saveToStorage();
+  renderCampaignStudents(cid);
+  showToast(`تم إضافة ${newEntries.length} طالب إلى الحملة`, 'success');
+}
+
+function hideCampaignDetail() {
+  document.getElementById('campaign-detail').classList.add('hidden');
+  document.getElementById('campaigns-list').classList.remove('hidden');
+}
+
+function updateCampaignStudentStatus(cid, sid, val) {
+  if (!campaignStudents[cid]) return;
+  const entry = campaignStudents[cid].find(x => x.studentId === sid);
+  if (entry) {
+    entry.status = val;
+    // Update global student status too
+    const s = students.find(x => x.id === sid);
+    if (s) {
+      s.status = val;
+      addLog('تحديث حالة طالب', `حدث حالة الطالب ${s.name} في حملة ${cid} إلى ${val}`);
+    }
+    showToast('تم تحديث الحالة بنجاح', 'success');
+    saveToStorage();
+    updateStats();
+  }
+}
+
+function updateCampaignStudentNotes(cid, sid, val) {
+  if (!campaignStudents[cid]) return;
+  const entry = campaignStudents[cid].find(x => x.studentId === sid);
+  if (entry) {
+    entry.notes = val;
+    saveToStorage();
+  }
+}
+
+function updateCampaignStudentFollowupDate(cid, sid, val) {
+  if (!campaignStudents[cid]) return;
+  const entry = campaignStudents[cid].find(x => x.studentId === sid);
+  if (entry) {
+    entry.followupDate = val;
+    saveToStorage();
+    showToast('تم تحديث تاريخ المتابعة', 'success');
+  }
+}
+
+// ---- ADD CAMPAIGN ----
+function openAddCampaignModal() {
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('c-notes').value = '';
+  openModal('modal-campaign');
+}
+
+function saveCampaign() {
+  const name = document.getElementById('c-name').value.trim();
+  const date = document.getElementById('c-date').value;
+  const notes = document.getElementById('c-notes').value.trim();
+
+  if (!name) { showToast('الرجاء إدخال اسم الحملة', 'error'); return; }
+
+  const newCampaign = { id: nextCampaignId++, name, date, notes };
+  campaigns.push(newCampaign);
+  addLog('إنشاء حملة', `أنشأ حملة جديدة باسم: ${name}`);
+  // Do not auto-add students, campaigns are now manual or based on specific selection
+  campaignStudents[newCampaign.id] = [];
+
+  closeModal('modal-campaign');
+  saveToStorage();
+  renderCampaigns();
+  showToast('تم إنشاء الحملة بنجاح ✓', 'success');
+}
+
+// ---- FOLLOW-UPS ----
+function renderFollowups() {
+  const tbody = document.getElementById('followups-table');
+  const today = new Date().toISOString().slice(0, 10);
+  let html = '';
+  let totalFollowups = 0;
+
+  campaigns.forEach(c => {
+    const cs = campaignStudents[c.id] || [];
+    const campaignFollowups = cs.filter(entry => 
+      ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'].includes(entry.status)
+    );
+
+    if (campaignFollowups.length > 0) {
+      totalFollowups += campaignFollowups.length;
+      html += `
+        <tr class="bg-slate-50">
+          <td colspan="6" class="py-2 px-4 font-bold text-slate-700 border-b border-t border-slate-200">
+            <i class="fas fa-bullhorn ml-1 text-blue-500"></i> ${c.name}
+          </td>
+        </tr>
+      `;
+      
+      campaignFollowups.forEach(entry => {
+        const s = students.find(x => x.id === entry.studentId);
+        if (!s) return;
+        const isToday = entry.followupDate === today;
+        html += `
+          <tr class="${isToday ? 'bg-blue-50/40' : ''}">
+            <td>
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white text-sm font-bold">${s.name[0]}</div>
+                <div>
+                  <p class="font-semibold text-sm">${s.name}</p>
+                  ${isToday ? '<span class="text-xs text-blue-600 font-bold">اليوم!</span>' : ''}
+                </div>
+              </div>
+            </td>
+            <td><a href="tel:${s.phone}" class="text-blue-600 font-mono text-sm hover:underline">${s.phone}</a></td>
+            <td>${getStatusBadge(entry.status)}</td>
+            <td class="text-sm text-slate-600 font-mono">${entry.followupDate || '—'}</td>
+            <td class="text-sm text-slate-500 max-w-xs">${entry.notes || '—'}</td>
+            <td>
+              <a href="tel:${s.phone}" class="btn-primary py-1.5 px-4 text-xs inline-flex items-center gap-2">
+                <i class="fas fa-phone text-xs"></i> اتصال
+              </a>
+            </td>
+          </tr>
+        `;
+      });
+    }
+  });
+
+  tbody.innerHTML = html || `<tr><td colspan="6" class="text-center py-10 text-slate-400"><i class="fas fa-check-circle text-3xl mb-2 block text-emerald-400"></i>رائع! لا يوجد طلاب يحتاجون متابعة حالياً في أي حملة</td></tr>`;
+}
+
+// ---- REPORTS ----
+function renderReports() {
+  const s = calcStats();
+  document.getElementById('rep-calls').textContent = s.contacted;
+  document.getElementById('rep-reg').textContent = s.registered;
+  document.getElementById('rep-campaigns').textContent = campaigns.length;
+  // KPI row updates
+  const convPct = s.total ? Math.round(s.registered / s.total * 100) : 0;
+  const intPct = s.total ? Math.round(s.interested / s.total * 100) : 0;
+  const respPct = s.total ? Math.round(s.contacted / s.total * 100) : 0;
+
+  const kpis = document.querySelectorAll('#page-reports .progress-fill');
+  if (kpis.length >= 3) {
+    kpis[0].style.width = convPct + '%';
+    kpis[0].parentElement.previousElementSibling.querySelector('p:last-child').textContent = convPct + '%';
+    kpis[1].style.width = intPct + '%';
+    kpis[1].parentElement.previousElementSibling.querySelector('p:last-child').textContent = intPct + '%';
+    kpis[2].style.width = respPct + '%';
+    kpis[2].parentElement.previousElementSibling.querySelector('p:last-child').textContent = respPct + '%';
+  }
+
+  document.getElementById('kpi-conv-text').textContent = `${s.registered} مسجل من ${s.total} طالب`;
+  document.getElementById('kpi-int-text').textContent = `${s.interested} مهتم من ${s.total} طالب`;
+  document.getElementById('kpi-resp-text').textContent = `${s.contacted} مستجيب من ${s.total} طالب`;
+
+  // Status breakdown
+  const statusGroups = {};
+  students.forEach(x => { statusGroups[x.status] = (statusGroups[x.status] || 0) + 1; });
+  const colorMap = {
+    'مهتم': 'from-emerald-500 to-emerald-400',
+    'متردد': 'from-amber-500 to-amber-400',
+    'غير مهتم': 'from-red-500 to-red-400',
+    'اتصل لاحقًا': 'from-purple-500 to-purple-400',
+    'لم يرد': 'from-slate-400 to-slate-300',
+    'تم التسجيل': 'from-blue-600 to-blue-400',
+  };
+
+  const container = document.getElementById('status-breakdown');
+  container.innerHTML = Object.entries(statusGroups).map(([status, count]) => {
+    const pct = Math.round(count / students.length * 100);
+    return `
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2">
+            ${getStatusBadge(status)}
+          </div>
+          <span class="text-sm font-bold text-slate-700">${count} (${pct}%)</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill bg-gradient-to-r ${colorMap[status] || 'from-blue-500 to-blue-400'}" style="width:${pct}%"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---- MODAL HELPERS ----
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
+}
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+
+// Click outside modal to close
+document.addEventListener('click', function(e) {
+  ['modal-student', 'modal-campaign', 'modal-delete'].forEach(id => {
+    const overlay = document.getElementById(id);
+    if (overlay && e.target === overlay) closeModal(id);
+  });
+});
+
+// Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    ['modal-student', 'modal-campaign', 'modal-delete'].forEach(id => closeModal(id));
+  }
+});
+
+// ---- CLASSES MANAGEMENT ----
+function renderClasses() {
+  const container = document.getElementById('classes-list');
+  container.innerHTML = classes.length ? classes.map(c => `
+    <div class="stat-card flex flex-col items-center justify-between p-6">
+      <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center mb-4">
+        <i class="fas fa-layer-group text-blue-600 text-xl"></i>
+      </div>
+      <h3 class="font-bold text-slate-800 mb-2">${c.name}</h3>
+      <p class="text-xs text-slate-400 mb-4">${students.filter(s => s.grade === c.name).length} طالب</p>
+      <button onclick="deleteClass(${c.id})" class="btn-danger w-full text-xs py-2">
+        <i class="fas fa-trash ml-1"></i> حذف الصف
+      </button>
+    </div>
+  `).join('') : '<div class="col-span-4 text-center py-10 text-slate-400 text-sm">لا توجد صفوف مضافة. يتم إنشاء الصفوف الأساسية عند التهيئة.</div>';
+  
+  updateClassSelects();
+}
+
+function addClass() {
+  const nameInput = document.getElementById('new-class-name');
+  const name = nameInput.value.trim();
+  if (!name) { showToast('الرجاء إدخال اسم الصف', 'error'); return; }
+  
+  if (classes.find(c => c.name === name)) {
+    showToast('هذا الصف موجود بالفعل', 'warning');
+    return;
+  }
+  
+  classes.push({ id: nextClassId++, name });
+  addLog('إضافة صف', `أضاف صفا دراسيا جديدا: ${name}`);
+  nameInput.value = '';
+  showToast('تم إضافة الصف بنجاح', 'success');
+  saveToStorage();
+  renderClasses();
+}
+
+function deleteClass(id) {
+  const cls = classes.find(c => c.id === id);
+  if (!cls) return;
+  
+  const studentCount = students.filter(s => s.grade === cls.name).length;
+  if (studentCount > 0) {
+    showToast(`لا يمكن حذف هذا الصف لوجود ${studentCount} طالب مرتبطين به`, 'error');
+    return;
+  }
+  
+  classes = classes.filter(c => c.id !== id);
+  addLog('حذف صف', `حذف الصف الدراسي: ${cls.name}`);
+  saveToStorage();
+  renderClasses();
+  showToast('تم حذف الصف', 'warning');
+}
+
+function updateClassSelects() {
+  const sClass = document.getElementById('s-class');
+  const fClass = document.getElementById('filter-class');
+  
+  if (sClass) {
+    const val = sClass.value;
+    sClass.innerHTML = '<option value="">اختر الصف</option>' + 
+      classes.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    sClass.value = val;
+  }
+  
+  if (fClass) {
+    const val = fClass.value;
+    fClass.innerHTML = '<option value="">جميع الصفوف</option>' + 
+      classes.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    fClass.value = val;
+  }
+}
+
+function resetApp() {
+  if (confirm('هل أنت متأكد من رغبتك في تصفير البرنامج؟ سيتم حذف جميع البيانات بشكل نهائي.')) {
+    addLog('تصفير البرنامج', 'قام بمسح كلي للبرنامج');
+    localStorage.removeItem('student_system_data');
+    localStorage.removeItem('student_system_logs');
+    location.reload();
+  }
+}
+
+function renderLogs() {
+  const container = document.getElementById('logs-table');
+  if (!container) return;
+  
+  container.innerHTML = activityLogs.length ? activityLogs.map(log => `
+    <tr>
+      <td class="whitespace-nowrap font-bold text-slate-700">${log.user}</td>
+      <td class="whitespace-nowrap"><span class="badge ${log.action.includes('حذف') ? 'badge-not-interested' : 'badge-registered'}">${log.action}</span></td>
+      <td class="text-sm text-slate-600">${log.details}</td>
+      <td class="whitespace-nowrap text-xs font-mono text-slate-400">${log.time}</td>
+    </tr>
+  `).join('') : '<tr><td colspan="4" class="text-center py-10 text-slate-400">لا توجد نشاطات مسجلة بعد</td></tr>';
+}
+
+// ---- UPDATE STATS ----
+function updateStats() {
+  const s = calcStats();
+  document.getElementById('stat-total') && (document.getElementById('stat-total').textContent = s.total);
+  document.getElementById('stat-contacted') && (document.getElementById('stat-contacted').textContent = s.contacted);
+  document.getElementById('stat-interested') && (document.getElementById('stat-interested').textContent = s.interested);
+  document.getElementById('stat-registered') && (document.getElementById('stat-registered').textContent = s.registered);
+  document.getElementById('stat-noanswer') && (document.getElementById('stat-noanswer').textContent = s.noAnswer);
+  document.getElementById('dash-total') && (document.getElementById('dash-total').textContent = s.total);
+  document.getElementById('dash-registered') && (document.getElementById('dash-registered').textContent = s.registered);
+
+  // Update follow-up badge
+  let totalFollowups = 0;
+  campaigns.forEach(c => {
+    const cs = campaignStudents[c.id] || [];
+    totalFollowups += cs.filter(entry => 
+      ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'].includes(entry.status)
+    ).length;
+  });
+  const badge = document.getElementById('followup-badge');
+  if (badge) badge.textContent = totalFollowups;
+}
+
+// ---- DATE ----
+function setDate() {
+  const el = document.getElementById('current-date');
+  if (!el) return;
+  const now = new Date();
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  el.textContent = now.toLocaleDateString('ar-SA', opts);
+}
+
+// ---- INIT ----
+function init() {
+  loadUsersFromStorage();
+  checkAuth();
+  
+  const hasData = loadFromStorage();
+  
+  if (!hasData) {
+    // Initial data if nothing in storage
+    nextStudentId = 13;
+    nextCampaignId = 3;
+    
+    // Auto-create basic classes
+    classes = [
+      { id: 1, name: 'أولى إعدادي' },
+      { id: 2, name: 'أولى ثانوي' },
+      { id: 3, name: 'ثانية ثانوي' },
+      { id: 4, name: 'ثالثة ثانوي' }
+    ];
+    nextClassId = 5;
+    
+    initCampaignStudents();
+  }
+  
+  updateClassSelects();
+  setDate();
+  updateStats();
+  renderDashboard();
+
+  // Animate progress bars in reports after a delay
+  setTimeout(() => {
+    document.querySelectorAll('.progress-fill').forEach(el => {
+      const w = el.style.width;
+      el.style.width = '0%';
+      setTimeout(() => { el.style.width = w; }, 100);
+    });
+  }, 300);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+
 </body>
+
 </html>
