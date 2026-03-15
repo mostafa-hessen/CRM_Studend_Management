@@ -41,7 +41,8 @@
     /* Sidebar */
     #sidebar {
       width: 260px;
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
       background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
       position: fixed;
       right: 0;
@@ -431,6 +432,10 @@
     <a class="nav-item active" onclick="navigate('dashboard')">
       <span class="icon"><i class="fas fa-chart-pie"></i></span>
       <span>لوحة التحكم</span>
+    </a>
+    <a id="nav-backup" class="nav-item text-emerald-400 hover:text-emerald-500 hover:bg-emerald-500/10" onclick="openModal('modal-backup')">
+      <span class="icon bg-emerald-500/10"><i class="fas fa-download text-emerald-500"></i></span>
+      <span>النسخ الاحتياطي</span>
     </a>
     <a class="nav-item" onclick="navigate('students')">
       <span class="icon"><i class="fas fa-user-graduate"></i></span>
@@ -1082,6 +1087,65 @@
       </button>
       <button onclick="closeModal('modal-delete')" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
         إلغاء
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BACKUP / EXPORT MODAL ===== -->
+<div class="modal-overlay" id="modal-backup">
+  <div class="modal-box" style="max-width:440px">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-file-export text-emerald-600 text-2xl"></i>
+      </div>
+      <h3 class="text-xl font-black text-slate-800 mb-2">نسخ احتياطي للبيانات</h3>
+      <p class="text-xs text-slate-500 mb-2">قم بتصدير البيانات للرجوع إليها مستقبلاً</p>
+      
+      <div id="folder-status" class="bg-blue-50 p-3 rounded-lg text-[10px] text-blue-700 text-right leading-relaxed mb-4">
+        <i class="fas fa-folder-open ml-1"></i>
+        <span>لم يتم تحديد مجلد للحفظ التلقائي بعد.</span>
+        <button onclick="selectBackupFolder()" class="block mt-2 text-blue-800 font-bold underline">إضغط هنا لتحديد مجلد للحفظ التلقائي (إكسيل + JSON)</button>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 gap-4 mb-6">
+      <button onclick="exportToExcel()" class="py-4 rounded-2xl bg-emerald-50 text-emerald-700 border-2 border-emerald-100 font-bold hover:bg-emerald-100 transition-all flex items-center justify-center gap-3">
+        <div class="w-10 h-10 bg-emerald-600 text-white rounded-lg flex items-center justify-center shadow-lg">
+          <i class="fas fa-file-excel"></i>
+        </div>
+        <div class="text-right">
+          <p class="text-sm">تصدير إكسيل (Excel)</p>
+          <p class="text-[10px] text-emerald-600/70 font-normal">عرض البيانات في جداول إلكترونية</p>
+        </div>
+      </button>
+
+      <button onclick="exportToJSON()" class="py-4 rounded-2xl bg-blue-50 text-blue-700 border-2 border-blue-100 font-bold hover:bg-blue-100 transition-all flex items-center justify-center gap-3">
+        <div class="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-lg">
+          <i class="fas fa-file-code"></i>
+        </div>
+        <div class="text-right">
+          <p class="text-sm">تصدير ملف برمجي (JSON)</p>
+          <p class="text-[10px] text-blue-600/70 font-normal">مناسب لاستعادة البيانات لاحقاً</p>
+        </div>
+      </button>
+    </div>
+
+    <!-- 
+    <div class="pt-4 border-t border-slate-100 flex flex-col gap-3">
+      <p class="text-[11px] text-slate-400 text-center uppercase tracking-wider font-bold">استعادة النسخة الاحتياطية</p>
+      <button onclick="document.getElementById('import-file').click()" class="w-full py-3 rounded-xl border-2 border-dashed border-slate-200 text-slate-500 font-bold text-sm hover:border-blue-300 hover:bg-blue-50/30 hover:text-blue-600 transition-all flex items-center justify-center gap-2">
+        <i class="fas fa-upload"></i> استيراد من ملف JSON
+      </button>
+      <input type="file" id="import-file" class="hidden" accept=".json" onchange="importFromJSON(this)"/>
+      <button onclick="closeModal('modal-backup')" class="w-full py-2.5 rounded-xl text-slate-400 font-bold text-xs hover:bg-slate-50 transition-colors">
+        إغلاق
+      </button>
+    </div>
+    -->
+    <div class="pt-4 border-t border-slate-100">
+      <button onclick="closeModal('modal-backup')" class="w-full py-2.5 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-50 transition-colors">
+        إغلاق
       </button>
     </div>
   </div>
@@ -1985,6 +2049,194 @@ function renderReports() {
   }).join('');
 }
 
+// ---- EXPORT / BACKUP ----
+let directoryHandle = null;
+
+async function selectBackupFolder() {
+  try {
+    directoryHandle = await window.showDirectoryPicker();
+    // Store handle in IndexedDB for persistence
+    const db = await openDB();
+    const tx = db.transaction('settings', 'readwrite');
+    await tx.objectStore('settings').put(directoryHandle, 'backup_folder_handle');
+    await tx.done;
+    updateFolderStatus(true);
+    showToast('تم تحديد مجلد الحفظ بنجاح', 'success');
+  } catch (err) {
+    if (err.name !== 'AbortError') showToast('لا يدعم متصفحك هذه الخاصية أو حدث خطأ', 'error');
+  }
+}
+
+async function updateFolderStatus(hasHandle) {
+  const el = document.getElementById('folder-status');
+  if (el) {
+    if (hasHandle) {
+      el.innerHTML = `<i class="fas fa-check-circle text-emerald-500 ml-1"></i> <span>تم ضبط مجلد الحفظ التلقائي بنجاح. سيتم حفظ نسخة (Excel + JSON) كل 24 ساعة.</span>`;
+      el.className = "bg-emerald-50 p-3 rounded-lg text-[10px] text-emerald-700 text-right leading-relaxed mb-4";
+    }
+  }
+}
+
+async function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('StudentSystemDB', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('settings');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function exportToJSON(isAuto = false) {
+  const data = localStorage.getItem('student_system_data');
+  if (!data) {
+    if (!isAuto) showToast('لا توجد بيانات لتصديرها', 'error');
+    return;
+  }
+
+  const date = new Date().toISOString().split('T')[0];
+  const time = new Date().toLocaleTimeString('ar-SA').replace(/:/g, '-');
+  const fileName = isAuto ? `auto_backup_${date}_${time}.json` : `backup_students_${date}.json`;
+
+  // Try saving to selected folder if available
+  if (directoryHandle) {
+    try {
+      if (await directoryHandle.queryPermission({mode: 'readwrite'}) !== 'granted') {
+        if (!isAuto) await directoryHandle.requestPermission({mode: 'readwrite'});
+        else return; // Skip auto if no permission
+      }
+      const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(data);
+      await writable.close();
+      if (!isAuto) showToast('تم حفظ ملف JSON في المجلد المحدد', 'success');
+      return;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Fallback to normal download
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  if (!isAuto) {
+    addLog('نسخ احتياطي', 'قام بتصدير نسخة احتياطية بصيغة JSON');
+    showToast('تم تصدير ملف JSON بنجاح', 'success');
+    closeModal('modal-backup');
+  }
+}
+
+async function exportToExcel(isAuto = false) {
+  if (!students.length) {
+    if (!isAuto) showToast('لا توجد بيانات طلاب لتصديرها', 'error');
+    return;
+  }
+  
+  let csvContent = "\uFEFF"; // BOM for Arabic
+  
+  // Section 1: Students Data
+  csvContent += "--- بيانات الطلاب ---\n";
+  csvContent += "الاسم,الهاتف,هاتف ولي الأمر,الصف,المدرسة,الحالة العامة,المتابعة التالية,ملاحظات\n";
+  students.forEach(s => {
+    csvContent += `"${s.name}","${s.phone}","${s.parentPhone || ''}","${s.grade}","${s.school}","${s.status}","${s.followupDate || ''}","${(s.notes || '').replace(/\n/g, ' ')}"\n`;
+  });
+  
+  csvContent += "\n--- الصفوف الدراسية ---\n";
+  csvContent += "اسم الصف,عدد الطلاب\n";
+  classes.forEach(c => {
+    const count = students.filter(s => s.grade === c.name).length;
+    csvContent += `"${c.name}","${count}"\n`;
+  });
+
+  csvContent += "\n--- تفاصيل الحملات والمتابعات ---\n";
+  csvContent += "الحملة,اسم الطالب,رقم الهاتف,الحالة في الحملة,تاريخ المتابعة,ملاحظات الحملة\n";
+  campaigns.forEach(c => {
+    const cs = campaignStudents[c.id] || [];
+    cs.forEach(entry => {
+      const s = students.find(x => x.id === entry.studentId);
+      if (s) {
+        csvContent += `"${c.name}","${s.name}","${s.phone}","${entry.status}","${entry.followupDate || ''}","${(entry.notes || '').replace(/\n/g, ' ')}"\n`;
+      }
+    });
+  });
+
+  const date = new Date().toISOString().split('T')[0];
+  const time = new Date().toLocaleTimeString('ar-SA').replace(/:/g, '-');
+  const fileName = isAuto ? `auto_backup_${date}_${time}.csv` : `students_full_report_${date}.csv`;
+
+  // Try saving to selected folder if available
+  if (directoryHandle) {
+    try {
+      if (await directoryHandle.queryPermission({mode: 'readwrite'}) !== 'granted') {
+        // Can't request permission automatically without user gesture
+        if (!isAuto) await directoryHandle.requestPermission({mode: 'readwrite'});
+        else return; 
+      }
+      const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(csvContent);
+      await writable.close();
+      if (!isAuto) showToast('تم حفظ ملف الإكسيل في المجلد المحدد', 'success');
+      return;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Fallback to normal download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  if (isAuto) {
+    addLog('نسخ احتياطي تلقائي', 'تم تنفيذ نسخة احتياطية دورية');
+    localStorage.setItem('last_auto_backup', Date.now());
+  } else {
+    addLog('نسخ احتياطي يدوي', 'تم تصدير تقرير شامل إكسيل');
+    showToast('تم تصدير ملف إكسيل الشامل بنجاح', 'success');
+    closeModal('modal-backup');
+  }
+}
+
+function importFromJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      // Basic validation
+      if (data && (data.students || data.campaigns || data.classes)) {
+        if (confirm('تنبيه: سيتم مسح البيانات الحالية واستبدالها ببيانات الملف. هل أنت متأكد؟')) {
+          localStorage.setItem('student_system_data', e.target.result);
+          // Also try to restore logs if present in the same storage if we want, 
+          // but usually backup only exports the 'data' key.
+          
+          addLog('استعادة نسخة احتياطية', 'قام باستيراد بيانات من ملف خارجي');
+          showToast('تم استعادة البيانات بنجاح، جارٍ تحديث الصفحة...', 'success');
+          setTimeout(() => location.reload(), 1500);
+        }
+      } else {
+        showToast('الملف المختار ليس ملف نسخة احتياطية صالح لهذا النظام', 'error');
+      }
+    } catch (err) {
+      showToast('حدث خطأ أثناء قراءة الملف أو الملف غير صالح', 'error');
+    }
+  };
+  reader.readAsText(file);
+  input.value = ''; // Reset for next time
+}
+
 // ---- MODAL HELPERS ----
 function openModal(id) {
   const el = document.getElementById(id);
@@ -1998,7 +2250,7 @@ function closeModal(id) {
 
 // Click outside modal to close
 document.addEventListener('click', function(e) {
-  ['modal-student', 'modal-campaign', 'modal-delete'].forEach(id => {
+  ['modal-student', 'modal-campaign', 'modal-delete', 'modal-backup'].forEach(id => {
     const overlay = document.getElementById(id);
     if (overlay && e.target === overlay) closeModal(id);
   });
@@ -2007,7 +2259,7 @@ document.addEventListener('click', function(e) {
 // Escape key
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    ['modal-student', 'modal-campaign', 'modal-delete'].forEach(id => closeModal(id));
+    ['modal-student', 'modal-campaign', 'modal-delete', 'modal-backup'].forEach(id => closeModal(id));
   }
 });
 
@@ -2176,6 +2428,33 @@ function init() {
       setTimeout(() => { el.style.width = w; }, 100);
     });
   }, 300);
+
+  // Daily Backup Check (Every 24 Hours)
+  const lastBackup = localStorage.getItem('last_auto_backup');
+  const now = Date.now();
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+  
+  // Load saved directory handle
+  openDB().then(db => {
+    const tx = db.transaction('settings', 'readonly');
+    const getRequest = tx.objectStore('settings').get('backup_folder_handle');
+    getRequest.onsuccess = () => {
+      if (getRequest.result) {
+        directoryHandle = getRequest.result;
+        updateFolderStatus(true);
+      }
+      
+      if (!lastBackup || (now - lastBackup > twentyFourHours)) {
+        setTimeout(async () => {
+          // Attempt double backup (Excel & JSON)
+          await exportToExcel(true);
+          await exportToJSON(true);
+          showToast('تم إجراء نسخة احتياطية تلقائية (إكسيل + JSON)', 'info');
+          localStorage.setItem('last_auto_backup', Date.now());
+        }, 3000);
+      }
+    };
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
