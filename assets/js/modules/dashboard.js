@@ -2,6 +2,21 @@
 import { UI } from './ui.js';
 
 export const Dashboard = {
+  calculateStats(state) {
+    return {
+      total: state.students.length,
+      contacted: state.students.filter(s => s.status && s.status !== 'لم يرد' && s.status !== 'لم يتم تحديد الحالة').length,
+      interested: state.students.filter(s => s.status === 'مهتم').length,
+      registered: state.students.filter(s => s.status === 'تم التسجيل').length,
+      noanswer: state.students.filter(s => s.status === 'لم يرد').length,
+      followups: Object.keys(state.campaignStudents).reduce((acc, cid) => {
+        return acc + state.campaignStudents[cid].filter(entry => 
+          ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'].includes(entry.status)
+        ).length;
+      }, 0)
+    };
+  },
+
   renderStats(stats) {
     const ids = ['stat-total', 'stat-contacted', 'stat-interested', 'stat-registered', 'stat-noanswer', 'dash-total', 'dash-registered'];
     ids.forEach(id => {

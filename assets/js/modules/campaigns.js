@@ -105,5 +105,25 @@ export const Campaigns = {
           </button>
         </td>
       </tr>`;
+  },
+
+  handleSave(state, editingId, data, callbacks) {
+    if (!data.name) {
+      UI.showToast('اسم الحملة مطلوب', 'error');
+      return false;
+    }
+
+    if (editingId) {
+      const idx = state.campaigns.findIndex(c => c.id === editingId);
+      state.campaigns[idx] = { ...state.campaigns[idx], ...data };
+      callbacks.addLog('تعديل حملة', `عدل بيانات الحملة: ${data.name}`);
+    } else {
+      const newCampaign = { ...data, id: state.nextCampaignId++ };
+      state.campaigns.push(newCampaign);
+      state.campaignStudents[newCampaign.id] = [];
+      callbacks.addLog('إنشاء حملة', `أنشأ حملة جديدة باسم: ${data.name}`);
+    }
+    return true;
   }
 };
+

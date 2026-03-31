@@ -42,14 +42,39 @@ export const Students = {
       UI.showToast('الاسم ورقم الهاتف مطلوبان', 'error');
       return false;
     }
-    
-    // Check duplication (if not editing or if phone changed)
     const duplicate = existingStudents.find(s => s.phone === data.phone && s.id !== data.id);
     if (duplicate) {
-      UI.showToast('رقم الهاتف هذا مسجل مسبقاً لطالب آخر', 'error');
+      UI.showToast('رقم الهاتف هذا مسجل مسبقاً طالباً آخر', 'error');
       return false;
     }
-    
+    return true;
+  },
+
+  handleSave(state, editingId, data, currentCampaignId, callbacks) {
+    if (!this.validate(data, state.students)) return false;
+
+    if (editingId) {
+      const idx = state.students.findIndex(s => s.id === editingId);
+      state.students[idx] = { ...state.students[idx], ...data };
+      callbacks.addLog('تعديل طالب', `عدل بيانات الطالب: ${data.name}`);
+    } else {
+      const newStudent = { ...data, id: state.nextStudentId++, status: 'لم يتم تحديد الحالة' };
+      state.students.push(newStudent);
+      callbacks.addLog('إضافة طالب', `أضاف طالباً جديداً: ${data.name}`);
+
+      if (currentCampaignId) {
+        const campaign = state.campaigns.find(x => x.id === currentCampaignId);
+        const firstStatus = campaign.statuses?.split(',')[0] || 'لم يتم تحديد الحالة';
+        if (!state.campaignStudents[currentCampaignId]) state.campaignStudents[currentCampaignId] = [];
+        state.campaignStudents[currentCampaignId].push({
+          studentId: newStudent.id,
+          status: firstStatus,
+          notes: '',
+          followupDate: ''
+        });
+      }
+    }
     return true;
   }
 };
+

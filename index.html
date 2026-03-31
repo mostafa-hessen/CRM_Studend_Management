@@ -79,6 +79,10 @@
       <span class="icon"><i class="fas fa-book-open"></i></span>
       <span>دليل الاستخدام</span>
     </a>
+    <a id="nav-users" class="nav-item hidden-user-element" onclick="navigate('users')">
+      <span class="icon"><i class="fas fa-users-cog"></i></span>
+      <span>إدارة الموظفين</span>
+    </a>
     <a id="nav-logs" class="nav-item hidden-user-element" onclick="navigate('logs')">
       <span class="icon"><i class="fas fa-history"></i></span>
       <span>سجل النشاطات</span>
@@ -704,15 +708,22 @@
         </div>
       </div>
       <div>
-        <label class="form-label font-bold text-blue-800">حالات الطلاب المخصصة (افصل بفاصلة)</label>
-        <div class="relative">
-          <textarea id="c-statuses" class="form-input min-h-[80px] py-3 pr-10" placeholder="مثال: مهتم, متردد, تم التواصل, غير مناسب, تم الحجز..."></textarea>
-          <i class="fas fa-tags absolute left-3 top-4 text-slate-300"></i>
+        <label class="form-label font-bold text-blue-800">حالات الطلاب المخصصة للحملة</label>
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div id="c-status-tags" class="flex flex-wrap gap-2 mb-3">
+             <!-- Tags will appear here -->
+          </div>
+          <div class="flex gap-2">
+            <input type="text" id="c-new-status" class="form-input" placeholder="اكتب اسم الحالة (مثلاً: مهتم)"/>
+            <button type="button" onclick="addCampaignStatusTag()" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors">
+              <i class="fas fa-plus"></i> إضافة
+            </button>
+          </div>
+          <p class="text-[10px] text-slate-500 mt-2 italic leading-relaxed">
+            <i class="fas fa-info-circle ml-1"></i>
+            هذه الحالات تظهر داخل الحملة فقط. إذا لم تضف حالات، سيتم استخدام الحالات الافتراضية.
+          </p>
         </div>
-        <p class="text-[10px] text-slate-500 mt-2 bg-blue-50 p-2 rounded-lg leading-relaxed">
-          <i class="fas fa-info-circle ml-1"></i>
-          هذا القسم يسمح لك بتعريف الحالات التي تظهر في قائمة المتابعة داخل هذه الحملة فقط. اترك الحقل فارغاً لاستخدام الحالات الافتراضية.
-        </p>
       </div>
       <div>
         <label class="form-label">ملاحظات الحملة</label>
@@ -792,9 +803,57 @@
     </div>
 
  
-    <div class="pt-4 border-t border-slate-100">
-      <button onclick="closeModal('modal-backup')" class="w-full py-2.5 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-50 transition-colors">
-        إغلاق
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD USER MODAL ===== -->
+<div class="modal-overlay" id="modal-add-user">
+  <div class="modal-box" style="max-width:400px">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-black text-slate-800">إضافة موظف جديد</h3>
+      <button onclick="closeModal('modal-add-user')" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-slate-500 transition-all">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="form-label">اسم الموظف</label>
+        <input type="text" id="u-name" class="form-input" placeholder="اسم الموظف الثلاثي"/>
+      </div>
+      <div>
+        <label class="form-label">اسم المستخدم (Username)</label>
+        <input type="text" id="u-username" class="form-input" placeholder="مثال: ahmed_2024"/>
+      </div>
+      <div>
+        <label class="form-label">كلمة المرور</label>
+        <input type="password" id="u-password" class="form-input" placeholder="********"/>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6">
+      <button onclick="saveAppUser()" class="btn-primary flex-1 justify-center">
+        <i class="fas fa-user-plus"></i> إنشاء الحساب
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESET MODAL ===== -->
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal-box" style="max-width:400px">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+      </div>
+      <h3 class="text-xl font-black text-slate-800 mb-2">تهيئة النظام بالكامل؟</h3>
+      <p class="text-xs text-slate-500 leading-relaxed px-4">سيؤدي هذا الإجراء إلى حذف جميع الطلاب، الحملات، والبيانات المسجلة. هل أنت متأكد؟</p>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="confirmReset()" class="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 shadow-lg shadow-red-200 transition-all">
+        نعم، تهيئة البيانات
+      </button>
+      <button onclick="closeModal('modal-reset')" class="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">
+        إلغاء
       </button>
     </div>
   </div>
