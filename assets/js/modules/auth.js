@@ -26,8 +26,9 @@ export const Auth = {
   },
 
   logout() {
-    sessionStorage.removeItem('logged_in_user');
-    location.reload();
+    // sessionStorage.removeItem('logged_in_user');
+    // location.reload();
+    alert("ام حمزه")
   },
 
   isAdmin(user) {

@@ -419,6 +419,12 @@ window.viewCampaign = (id) => {
     Campaigns.renderCampaignStudents(id, StateManager.getState().campaigns, StateManager.getState().students, StateManager.getState().campaignStudents, 'campaign-students-table');
 };
 
+window.hideCampaignDetail = () => {
+    currentCampaignId = null;
+    document.getElementById('campaigns-list').classList.remove('hidden');
+    document.getElementById('campaign-detail').classList.add('hidden');
+};
+
 window.editCampaign = (id) => {
     const c = StateManager.getState().campaigns.find(x => x.id === id);
     if (!c) return;
@@ -435,6 +441,46 @@ window.editCampaign = (id) => {
     renderStatusTags();
     renderEmployeeCheckboxes(c.assignedEmployees || []);
     UI.openModal('modal-campaign');
+};
+
+window.openAddStudentToCampaignModal = () => {
+    UI.openModal('modal-student');
+};
+
+window.syncMissingStudents = () => {
+    if (!currentCampaignId) return;
+    const state = StateManager.getState();
+    const c = state.campaigns.find(x => x.id === currentCampaignId);
+    if (!c) return;
+    
+    const students = state.students.filter(s => {
+        const matchesGrade = c.targetGrade === 'الكل' || s.currentClass === c.targetGrade;
+        const matchesType = c.educationType === 'الكل' || s.educationType === c.educationType;
+        return matchesGrade && matchesType;
+    });
+
+    let addedCount = 0;
+    const currentOnes = state.campaignStudents[currentCampaignId] || [];
+    students.forEach(s => {
+        if (!currentOnes.find(e => e.studentId === s.id)) {
+            currentOnes.push({
+                studentId: s.id,
+                status: 'لم يتم الاتصال',
+                followupDate: '',
+                notes: ''
+            });
+            addedCount++;
+        }
+    });
+    
+    if (addedCount > 0) {
+        state.campaignStudents[currentCampaignId] = currentOnes;
+        StateManager.save();
+        Campaigns.renderCampaignStudents(currentCampaignId, state.campaigns, state.students, state.campaignStudents, 'campaign-students-table');
+        UI.showToast(`تم إضافة ${addedCount} طالب جديد بنجاح`, 'success');
+    } else {
+        UI.showToast('لا يوجد طلاب جدد مطابقين لمعايير الحملة', 'info');
+    }
 };
 
 window.deleteCampaign = (id) => {
