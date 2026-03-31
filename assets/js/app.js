@@ -19,10 +19,12 @@ import { Router } from './core/router.js';
 let editingStudentId = null;
 let deletingStudentId = null;
 let editingCampaignId = null;
+let editingClassId = null;
 let currentCampaignId = null;
 let currentCampaignStatuses = [];
 
 // ---- GLOBAL MAPPINGS FOR INLINE HTML ----
+window.UI = UI;
 window.navigate = (page) => Router.navigate(page, StateManager.getCurrentUser(), PageRenderers);
 window.toggleSidebar = UI.toggleSidebar;
 window.openModal = UI.openModal;
@@ -79,6 +81,11 @@ const PageRenderers = {
 // ---- INITIALIZATION ----
 function init() {
   StateManager.loadPersistentData();
+  
+  const state = StateManager.getState();
+  if (!state.appUsers || Object.keys(state.appUsers).length === 0) {
+    state.appUsers = Auth.getInitialUsers();
+  }
   
   const user = Auth.getCurrentUser();
   if (user) {
@@ -154,12 +161,52 @@ window.handleLogin = () => {
     }
 };
 
+let editingAppUsername = null;
+
+window.openAddUserModal = () => {
+    editingAppUsername = null;
+    document.getElementById('modal-user-title').textContent = 'إضافة موظف جديد';
+    document.getElementById('u-name').value = '';
+    document.getElementById('u-username').value = '';
+    document.getElementById('u-username').disabled = false;
+    document.getElementById('u-phone').value = '';
+    document.getElementById('u-password').value = '';
+    UI.openModal('modal-add-user');
+};
+
+window.openEditUserModal = (un) => {
+    editingAppUsername = un;
+    const u = StateManager.getState().appUsers[un];
+    document.getElementById('modal-user-title').textContent = 'تعديل بيانات الموظف';
+    document.getElementById('u-name').value = u.name;
+    document.getElementById('u-username').value = un;
+    document.getElementById('u-username').disabled = true;
+    document.getElementById('u-phone').value = u.phone || '';
+    document.getElementById('u-password').value = ''; // Optional on edit
+    UI.openModal('modal-add-user');
+};
+
 window.saveAppUser = () => {
     const name = document.getElementById('u-name').value.trim();
     const un = document.getElementById('u-username').value.trim();
+    const phone = document.getElementById('u-phone').value.trim();
     const pass = document.getElementById('u-password').value.trim();
-    if (UserManagement.saveUser(name, un, pass)) {
+    const isEdit = !!editingAppUsername;
+    
+    if (UserManagement.saveUser(name, isEdit ? editingAppUsername : un, phone, pass, isEdit)) {
         UI.closeModal('modal-add-user');
+        PageRenderers.users();
+    }
+};
+
+window.deleteAppUser = (un) => {
+    if (UserManagement.deleteUser(un)) {
+        PageRenderers.users();
+    }
+};
+
+window.changeAppUserPassword = (un) => {
+    if (UserManagement.changePassword(un)) {
         PageRenderers.users();
     }
 };
@@ -307,11 +354,25 @@ window.confirmDelete = () => {
     UI.closeModal('modal-delete');
 };
 
+window.openAddStudentModal = () => {
+    editingStudentId = null;
+    document.getElementById('modal-student-title').textContent = 'إضافة طالب جديد';
+    ['s-name', 's-phone', 's-parent-phone', 's-school', 's-notes'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('s-class').innerHTML = Classes.renderOptions(StateManager.getState().classes);
+    document.getElementById('s-education-type').value = 'عام';
+    UI.openModal('modal-student');
+};
+
 // --- Campaign CRUD Bindings ---
 window.openAddCampaignModal = () => {
     editingCampaignId = null;
     document.getElementById('modal-campaign-title').textContent = 'إنشاء حملة جديدة';
-    ['c-name', 'c-statuses', 'c-notes'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('save-campaign-btn-text').textContent = 'إنشاء الحملة';
+    ['c-name', 'c-notes', 'c-new-status'].forEach(id => { 
+        const el = document.getElementById(id);
+        if (el) el.value = ''; 
+    });
+    document.getElementById('c-target-grade').innerHTML = Classes.renderOptions(StateManager.getState().classes, true);
     document.getElementById('c-target-grade').value = 'الكل';
     document.getElementById('c-date').value = new Date().toISOString().slice(0, 10);
     currentCampaignStatuses = [];
@@ -356,5 +417,71 @@ window.viewCampaign = (id) => {
     document.getElementById('campaign-detail').classList.remove('hidden');
     document.getElementById('campaign-detail-name').textContent = c.name;
     Campaigns.renderCampaignStudents(id, StateManager.getState().campaigns, StateManager.getState().students, StateManager.getState().campaignStudents, 'campaign-students-table');
+};
+
+window.editCampaign = (id) => {
+    const c = StateManager.getState().campaigns.find(x => x.id === id);
+    if (!c) return;
+    editingCampaignId = id;
+    document.getElementById('modal-campaign-title').textContent = 'تعديل الحملة';
+    document.getElementById('save-campaign-btn-text').textContent = 'تحديث الحملة';
+    document.getElementById('c-target-grade').innerHTML = Classes.renderOptions(StateManager.getState().classes, true);
+    document.getElementById('c-name').value = c.name;
+    document.getElementById('c-target-grade').value = c.targetGrade;
+    document.getElementById('c-education-type').value = c.educationType || 'الكل';
+    document.getElementById('c-date').value = c.date;
+    document.getElementById('c-notes').value = c.notes;
+    currentCampaignStatuses = c.statuses.split(',').filter(s => s);
+    renderStatusTags();
+    renderEmployeeCheckboxes(c.assignedEmployees || []);
+    UI.openModal('modal-campaign');
+};
+
+window.deleteCampaign = (id) => {
+    if (!confirm('هل أنت متأكد من حذف هذه الحملة وجميع بيانات التواصل المرتبطة بها؟')) return;
+    const state = StateManager.getState();
+    const c = state.campaigns.find(x => x.id === id);
+    if (c) {
+        state.campaigns = state.campaigns.filter(x => x.id !== id);
+        delete state.campaignStudents[id];
+        StateManager.addLog('حذف حملة', c.name);
+        StateManager.save();
+        PageRenderers.campaigns();
+        UI.showToast('تم حذف الحملة بنجاح', 'warning');
+    }
+};
+
+// --- Class CRUD Bindings ---
+window.openAddClassModal = () => {
+    editingClassId = null;
+    document.getElementById('cl-name').value = '';
+    UI.openModal('modal-class');
+};
+
+window.saveClass = () => {
+    const state = StateManager.getState();
+    const val = document.getElementById('cl-name').value.trim();
+    if (Classes.handleSave(state, editingClassId, val, { addLog: StateManager.addLog })) {
+        StateManager.save();
+        UI.closeModal('modal-class');
+        PageRenderers.classes();
+    }
+};
+
+window.editClass = (id) => {
+    editingClassId = id;
+    const c = StateManager.getState().classes.find(x => x.id === id);
+    if (c) {
+        document.getElementById('cl-name').value = c.name;
+        UI.openModal('modal-class');
+    }
+};
+
+window.deleteClass = (id) => {
+    if (!confirm('حذف الصف الدراسي سيؤدي لمسحه من بيانات الطلاب المرتبطين به. هل أنت متأكد؟')) return;
+    const state = StateManager.getState();
+    state.classes = state.classes.filter(x => x.id !== id);
+    StateManager.save();
+    PageRenderers.classes();
 };
 

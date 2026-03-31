@@ -379,4 +379,4 @@
     }
     .login-btn:hover { background: #1d4ed8; transform: translateY(-2px); }
 
-    .hidden-user-element { display: none !important; }
+    .hidden-user-element { display: none; }

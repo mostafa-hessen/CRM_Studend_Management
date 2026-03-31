@@ -33,5 +33,29 @@ export const Classes = {
         </div>
       `;
     }).join('') : `<div class="md:col-span-4 text-center py-12 bg-white rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold"><i class="fas fa-school text-3xl mb-3 block text-slate-300"></i>لا توجد صفوف دراسية منشأة حالياً</div>`;
+  },
+
+  renderOptions(classesList, includeAll = false) {
+    let html = includeAll ? '<option value="الكل">جميع الصفوف</option>' : '';
+    html += classesList.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    return html;
+  },
+
+  handleSave(state, id, name, callbacks) {
+    if (!name) { UI.showToast('اسم الصف مطلوب', 'error'); return false; }
+    if (id) {
+        const idx = state.classes.findIndex(x => x.id === id);
+        if (idx !== -1) {
+            const oldName = state.classes[idx].name;
+            state.classes[idx].name = name;
+            // Update students grade name if needed or rely on IDs (Currently relying on names)
+            state.students.forEach(s => { if (s.grade === oldName) s.grade = name; });
+            callbacks.addLog('تعديل صف', name);
+        }
+    } else {
+        state.classes.push({ id: Date.now(), name });
+        callbacks.addLog('إضافة صف', name);
+    }
+    return true;
   }
 };
