@@ -32,9 +32,26 @@ export const StorageService = {
   },
 
   async getCampaigns() {
-    const { data, error } = await supabase.from('campaigns').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('campaigns')
+      .select('*, campaign_students(status)')
+      .order('created_at', { ascending: false });
+    
     if (error) throw error;
-    return data;
+
+    return data.map(c => {
+      const statuses = c.statuses ? JSON.parse(c.statuses) : [];
+      const successNames = statuses.filter(s => s.type === 'success').map(s => s.name || s);
+      
+      // If no success tags defined yet, use the classic defaults
+      const effectiveSuccess = successNames.length ? successNames : ['إيجابي', 'اون لاين', 'اون لاين موعد'];
+
+      return {
+        ...c,
+        totalStudents: c.campaign_students?.length || 0,
+        successStudents: (c.campaign_students || []).filter(cs => effectiveSuccess.includes(cs.status)).length
+      };
+    });
   },
   async upsertCampaign(campaign) {
     const { data, error } = await supabase.from('campaigns').upsert(campaign).select();

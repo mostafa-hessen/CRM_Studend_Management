@@ -69,7 +69,7 @@
       <span class="icon"><i class="fas fa-bullhorn"></i></span>
       <span>الحملات</span>
     </a>
-    <a id="nav-followups" class="nav-item hidden" onclick="navigate('followups')">
+    <a id="nav-followups" class="nav-item" onclick="navigate('followups')">
       <span class="icon"><i class="fas fa-phone-alt"></i></span>
       <span>المتابعات</span>
       <span id="followup-badge" class="mr-auto bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
@@ -221,8 +221,8 @@
         </div>
       </div>
 
-      <!-- Today Follow-ups (Hidden) -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hidden">
+      <!-- Today Follow-ups -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mt-8">
         <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div class="flex items-center gap-3">
             <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
@@ -333,7 +333,17 @@
           <input type="text" id="search-campaign-query" placeholder="بحث باسم الحملة..." class="form-input pr-10" oninput="window.filterCampaigns()"/>
           <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
         </div>
+        <select id="filter-campaign-grade" class="form-input w-auto" onchange="window.filterCampaigns()">
+          <option value="">جميع الصفوف</option>
+        </select>
+        <select id="filter-campaign-education" class="form-input w-auto" onchange="window.filterCampaigns()">
+          <option value="">جميع الأنواع</option>
+          <option value="عام">عام</option>
+          <option value="لغات">لغات</option>
+          <option value="أزهري">أزهري</option>
+        </select>
       </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="campaigns-list"></div>
 
 
@@ -372,8 +382,8 @@
       </div>
     </div>
 
-    <!-- ============= FOLLOW UPS PAGE (Hidden) ============= -->
-    <div id="page-followups" class="page hidden">
+    <!-- ============= FOLLOW UPS PAGE ============= -->
+    <div id="page-followups" class="page">
       <div class="mb-6">
         <h2 class="text-xl font-black text-slate-800">المتابعات</h2>
         <p class="text-sm text-slate-500">الطلاب الذين يحتاجون إلى متابعة</p>
@@ -736,12 +746,18 @@
           <div id="c-status-tags" class="flex flex-wrap gap-2 mb-3">
              <!-- Tags will appear here -->
           </div>
-          <div class="flex gap-2">
-            <input type="text" id="c-new-status" class="form-input" placeholder="اكتب اسم الحالة (مثلاً: مهتم)"/>
-            <button type="button" onclick="addCampaignStatusTag()" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors">
+          <div class="flex flex-col md:flex-row gap-2">
+            <input type="text" id="c-new-status" class="form-input flex-1" placeholder="اسم الحالة (مثلاً: إيجابي)"/>
+            <select id="c-status-type" class="form-input w-full md:w-auto">
+              <option value="success">✅ نجاح (Success)</option>
+              <option value="followup">⏳ متابعة (Follow-up)</option>
+              <option value="outside">❌ خارج (Outside)</option>
+            </select>
+            <button type="button" onclick="addCampaignStatusTag()" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors shrink-0">
               <i class="fas fa-plus"></i> إضافة
             </button>
           </div>
+
           <p class="text-[10px] text-slate-500 mt-2 italic leading-relaxed">
             <i class="fas fa-info-circle ml-1"></i>
             هذه الحالات تظهر داخل الحملة فقط. إذا لم تضف حالات، سيتم استخدام الحالات الافتراضية.

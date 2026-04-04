@@ -28,6 +28,13 @@ export const CampaignController = {
       }
     }
     CampaignView.renderList(CampaignModel.getAll(), ClassModel.getAll());
+    
+    // Populate filter-campaign-grade dropdown
+    const gradeFilter = document.getElementById('filter-campaign-grade');
+    if (gradeFilter) {
+      const classes = ClassModel.getAll();
+      gradeFilter.innerHTML = '<option value="">جميع الصفوف</option>' + (classes || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
   },
 
   hideDetail() {
@@ -99,7 +106,7 @@ export const CampaignController = {
             await StorageService.upsertCampaignStudent({
             campaign_id: cid,
             student_id: student.id,
-            status: 'لم يتم الاتصال',
+            status: 'لم يتم التحديد بعد',
             notes: '',
             followup_date: null
             });
@@ -133,16 +140,17 @@ export const CampaignController = {
     UIService.showToast('تم تحديث الملاحظة', 'success');
   },
 
-  addStatusTag(tag) {
+  addStatusTag(name, type) {
     const tags = CampaignView.getStatuses();
-    if (tag && !tags.includes(tag)) {
-        tags.push(tag);
+    if (name && !tags.find(t => (t.name || t) === name)) {
+        tags.push({ name, type });
         CampaignView.renderStatusTags(tags);
+        document.getElementById('c-new-status').value = '';
     }
   },
 
-  removeStatusTag(tag) {
-    const tags = CampaignView.getStatuses().filter(t => t !== tag);
+  removeStatusTag(name) {
+    const tags = CampaignView.getStatuses().filter(t => (t.name || t) !== name);
     CampaignView.renderStatusTags(tags);
   },
 
@@ -168,7 +176,7 @@ export const CampaignController = {
         await StorageService.upsertCampaignStudent({
           campaign_id: cid,
           student_id: student.id,
-          status: 'لم يتم الاتصال',
+          status: 'لم يتم التحديد بعد',
           notes: '',
           followup_date: null
         });

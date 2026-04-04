@@ -23,11 +23,17 @@ export const CampaignView = {
     }
 
     container.innerHTML = campaigns.map(c => {
-      const progress = c.totalStudents ? Math.round((c.contactedStudents / c.totalStudents) * 100) : 0;
+      // Calculation based on Success statuses
+      const total = c.totalStudents || 0;
+      const success = c.successStudents || 0;
+      const progress = total ? Math.round((success / total) * 100) : 0;
       const targetGradeName = c.target_grade_id ? (classes.find(cls => cls.id === c.target_grade_id)?.name || c.target_grade_id) : 'الكل';
       
       return `
-        <div class="bg-white rounded-2xl border border-slate-100 p-6 hover:shadow-lg hover:-translate-y-1 hover:border-blue-200 transition-all cursor-pointer group relative overflow-hidden" onclick="viewCampaign(${c.id})">
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 hover:shadow-lg hover:-translate-y-1 hover:border-blue-200 transition-all cursor-pointer group relative overflow-hidden" 
+             onclick="viewCampaign(${c.id})" 
+             data-grade-id="${c.target_grade_id || ''}" 
+             data-education="${c.education_type || 'الكل'}">
           <div class="absolute top-0 right-0 w-1 h-full ${progress === 100 ? 'bg-emerald-500' : 'bg-blue-500'} opacity-0 group-hover:opacity-100 transition-opacity"></div>
           
           <div class="flex justify-between items-start mb-5">
@@ -59,10 +65,11 @@ export const CampaignView = {
           </div>
 
           <div class="pt-4 border-t border-slate-100">
-            <div class="flex justify-between text-xs mb-2">
-              <span class="text-slate-600 font-bold">نسبة إنجاز الحملة</span>
+            <div class="flex justify-between text-[10px] mb-2">
+              <span class="text-slate-600 font-bold">نسبة النجاح بالحملة</span>
               <span class="font-black ${progress === 100 ? 'text-emerald-500' : 'text-blue-600'}">${progress}%</span>
             </div>
+
             <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
               <div class="${progress === 100 ? 'bg-emerald-500' : 'bg-blue-500'} h-full transition-all duration-1000 relative" style="width: ${progress}%">
                 <div class="absolute top-0 right-0 bottom-0 left-0 bg-white/20 w-full h-full" style="background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent); background-size: 1rem 1rem;"></div>
@@ -173,13 +180,26 @@ export const CampaignView = {
                   <td class="p-4">
                     <a href="tel:${s.phone}" class="text-blue-600 font-mono text-sm hover:underline" dir="ltr">${s.phone}</a>
                   </td>
-                  <td class="p-4">
-                    <select onchange="updateCampaignStudentStatus(${id}, ${s.id}, this.value)" class="form-input text-xs py-2 px-3 bg-white w-full max-w-[150px]">
-                      ${(campaign.statuses ? JSON.parse(campaign.statuses) : ['إيجابي', 'متردد', 'اون لاين', 'موعد غير مناسب', 'اون لاين موعد', 'خارج الحملة', 'حملة زميل', 'لم يرد']).map(st => 
-                        `<option value="${st}" ${entry.status === st ? 'selected' : ''}>${st}</option>`
-                      ).join('')}
+                      ${(campaign.statuses ? JSON.parse(campaign.statuses) : [
+                        { name: 'لم يتم التحديد بعد', type: 'followup' },
+                        { name: 'إيجابي', type: 'success' },
+                        { name: 'متردد', type: 'followup' },
+                        { name: 'اون لاين', type: 'success' },
+                        { name: 'موعد غير مناسب', type: 'outside' },
+                        { name: 'اون لاين موعد', type: 'success' },
+                        { name: 'خارج الحملة', type: 'outside' },
+                        { name: 'حملة زميل', type: 'outside' },
+                        { name: 'لم يرد', type: 'followup' }
+                      ]).map(tag => {
+                        const name = tag.name || tag;
+                        const type = tag.type || 'followup';
+                        const prefix = name === 'لم يتم التحديد بعد' ? '🔘 ' : (type === 'success' ? '✅ ' : (type === 'outside' ? '❌ ' : '⏳ '));
+                        return `<option value="${name}" ${entry.status === name ? 'selected' : ''}>${prefix}${name}</option>`;
+                      }).join('')}
                     </select>
                   </td>
+
+
                   <td class="p-4">
                     <input type="date" value="${entry.followupDate || ''}" onchange="updateCampaignStudentFollowupDate(${id}, ${s.id}, this.value)" class="form-input text-xs py-2 px-3 w-full max-w-[130px]">
                   </td>
@@ -227,20 +247,39 @@ export const CampaignView = {
       document.getElementById('c-name').value = '';
       document.getElementById('c-target-grade').value = '';
       document.getElementById('c-education-type').value = 'الكل';
+      document.getElementById('c-status-type').value = 'success';
 
-      this.renderStatusTags(['إيجابي', 'متردد', 'اون لاين', 'موعد غير مناسب', 'اون لاين موعد', 'خارج الحملة', 'حملة زميل', 'لم يرد']);
+      const defaultStatuses = [
+        { name: 'لم يتم التحديد بعد', type: 'followup' },
+        { name: 'إيجابي', type: 'success' },
+        { name: 'متردد', type: 'followup' },
+        { name: 'اون لاين', type: 'success' },
+        { name: 'موعد غير مناسب', type: 'outside' },
+        { name: 'اون لاين موعد', type: 'success' },
+        { name: 'خارج الحملة', type: 'outside' },
+        { name: 'حملة زميل', type: 'outside' },
+        { name: 'لم يرد', type: 'followup' }
+      ];
+      this.renderStatusTags(defaultStatuses);
     }
     UIService.openModal('modal-campaign');
   },
 
   renderStatusTags(tags) {
     const container = document.getElementById('c-status-tags');
-    container.innerHTML = tags.map(t => `
-      <span class="badge badge-interested flex items-center gap-2">
-        ${t}
-        <i class="fas fa-times cursor-pointer hover:text-red-500" onclick="removeCampaignStatusTag('${t}')"></i>
-      </span>
-    `).join('');
+    const typeIcons = { success: 'fa-check-circle text-emerald-500', followup: 'fa-clock text-blue-500', outside: 'fa-times-circle text-red-500' };
+    
+    container.innerHTML = tags.map(t => {
+      const name = t.name || t;
+      const type = t.type || 'followup';
+      return `
+        <span class="badge ${type === 'success' ? 'badge-interested' : (type === 'outside' ? 'badge-not-interested' : 'badge-call-later')} flex items-center gap-2">
+          <i class="fas ${typeIcons[type] || 'fa-tag'}"></i>
+          ${name}
+          <i class="fas fa-times cursor-pointer hover:text-red-500" onclick="removeCampaignStatusTag('${name}')"></i>
+        </span>
+      `;
+    }).join('');
     this._currentTags = tags;
   },
 

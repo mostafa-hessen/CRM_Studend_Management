@@ -32,6 +32,9 @@ export const UIService = {
       'خارج الحملة': 'badge-no-answer',
       'حملة زميل': 'badge-no-answer',
       'لم يرد': 'badge-no-answer',
+      'اتصل لاحقًا': 'badge-hesitant',
+      'مهتم': 'badge-interested',
+      'تم التسجيل': 'badge-registered',
       'لم يتم تحديد الحالة': 'badge-no-answer',
     };
     return `<span class="badge ${map[status] || 'badge-no-answer'}">${status}</span>`;

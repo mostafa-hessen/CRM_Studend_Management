@@ -15,8 +15,17 @@ export const FollowupController = {
     
     let html = '';
     managedCampaigns.forEach(c => {
+        const campaignStatuses = c.statuses ? JSON.parse(c.statuses) : [];
+        const followupStatuses = campaignStatuses
+            .filter(t => t.type === 'followup')
+            .map(t => t.name || t);
+        
+        // Fallback or unmigrated data
+        const fallback = ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'];
+        const effectiveFollowup = followupStatuses.length ? followupStatuses : fallback;
+
         const cs = (state.campaignStudents[c.id] || []).filter(e => 
-          ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'].includes(e.status)
+          effectiveFollowup.includes(e.status)
         );
 
         if (cs.length) {

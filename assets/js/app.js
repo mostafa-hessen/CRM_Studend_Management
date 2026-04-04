@@ -177,10 +177,20 @@ window.saveCampaign = () => CampaignController.handleSave();
 window.viewCampaign = (id) => CampaignController.handleViewCampaign(id);
 window.filterCampaigns = () => {
     const q = document.getElementById('search-campaign-query').value.toLowerCase();
+    const grade = document.getElementById('filter-campaign-grade').value;
+    const education = document.getElementById('filter-campaign-education').value;
+    
     const cards = document.querySelectorAll('#campaigns-list > div');
     cards.forEach(card => {
         const title = card.querySelector('h3').textContent.toLowerCase();
-        card.style.display = title.includes(q) ? '' : 'none';
+        const cardGrade = card.getAttribute('data-grade-id');
+        const cardEducation = card.getAttribute('data-education');
+        
+        const matchesQuery = title.includes(q);
+        const matchesGrade = !grade || cardGrade === grade || (grade === "" && cardGrade === "");
+        const matchesEducation = !education || cardEducation === education || cardEducation === 'الكل';
+        
+        card.style.display = (matchesQuery && matchesGrade && matchesEducation) ? '' : 'none';
     });
 };
 window.filterCampaignStudents = () => {
@@ -199,7 +209,10 @@ window.filterCampaignStudents = () => {
         row.style.display = (matchesQuery && matchesStatus) ? '' : 'none';
     });
 };
-window.addCampaignStatusTag = () => CampaignController.addStatusTag(document.getElementById('c-new-status').value.trim());
+window.addCampaignStatusTag = () => CampaignController.addStatusTag(
+    document.getElementById('c-new-status').value.trim(),
+    document.getElementById('c-status-type').value
+);
 window.removeCampaignStatusTag = (tag) => CampaignController.removeStatusTag(tag);
 window.hideCampaignDetail = () => CampaignController.hideDetail();
 window.updateCampaignStudentStatus = (cid, sid, status) => CampaignController.updateStudentStatus(cid, sid, status);
