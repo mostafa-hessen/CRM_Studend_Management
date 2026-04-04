@@ -175,6 +175,30 @@ window.openAddCampaignModal = () => CampaignController.handleOpenAddModal();
 window.editCampaign = (id) => CampaignController.handleOpenEditModal(id);
 window.saveCampaign = () => CampaignController.handleSave();
 window.viewCampaign = (id) => CampaignController.handleViewCampaign(id);
+window.filterCampaigns = () => {
+    const q = document.getElementById('search-campaign-query').value.toLowerCase();
+    const cards = document.querySelectorAll('#campaigns-list > div');
+    cards.forEach(card => {
+        const title = card.querySelector('h3').textContent.toLowerCase();
+        card.style.display = title.includes(q) ? '' : 'none';
+    });
+};
+window.filterCampaignStudents = () => {
+    const q = document.getElementById('search-campaign-student-query').value.toLowerCase();
+    const status = document.getElementById('filter-campaign-student-status').value;
+    const rows = document.querySelectorAll('#campaign-detail table tbody tr');
+    
+    rows.forEach(row => {
+        const name = row.querySelector('td:first-child p:first-child')?.textContent.toLowerCase() || '';
+        const phone = row.querySelector('td:nth-child(2) a')?.textContent || '';
+        const rowStatus = row.querySelector('td:nth-child(3) select')?.value || '';
+        
+        const matchesQuery = name.includes(q) || phone.includes(q);
+        const matchesStatus = !status || rowStatus === status;
+        
+        row.style.display = (matchesQuery && matchesStatus) ? '' : 'none';
+    });
+};
 window.addCampaignStatusTag = () => CampaignController.addStatusTag(document.getElementById('c-new-status').value.trim());
 window.removeCampaignStatusTag = (tag) => CampaignController.removeStatusTag(tag);
 window.hideCampaignDetail = () => CampaignController.hideDetail();

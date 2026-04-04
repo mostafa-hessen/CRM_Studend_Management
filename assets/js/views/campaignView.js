@@ -132,6 +132,20 @@ export const CampaignView = {
         </div>
       </div>
 
+      <!-- Filters -->
+      <div class="bg-white rounded-xl border border-slate-100 p-4 mb-5 flex flex-wrap gap-3">
+        <div class="relative flex-1 min-w-48">
+          <input type="text" id="search-campaign-student-query" placeholder="بحث بالاسم أو رقم الهاتف..." class="form-input pr-10" oninput="window.filterCampaignStudents()"/>
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        </div>
+        <select id="filter-campaign-student-status" class="form-input w-auto" onchange="window.filterCampaignStudents()">
+          <option value="">جميع الحالات</option>
+          ${(campaign.statuses ? JSON.parse(campaign.statuses) : ['إيجابي', 'متردد', 'اون لاين', 'موعد غير مناسب', 'اون لاين موعد', 'خارج الحملة', 'حملة زميل', 'لم يرد']).map(st => 
+            `<option value="${st}">${st}</option>`
+          ).join('')}
+        </select>
+      </div>
+
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
         <table class="w-full text-right table-auto border-collapse">
           <thead class="bg-slate-50 border-b border-slate-100">
