@@ -16,6 +16,14 @@ let editingId = null;
 
   render() {
     StudentView.renderTable(StudentModel.getAll());
+    
+    // Populate filter-class dropdown
+    const classFilter = document.getElementById('filter-class');
+    if (classFilter) {
+      const classes = ClassModel.getAll();
+      classFilter.innerHTML = '<option value="">جميع الصفوف</option>' + 
+        classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
   },
 
   handleFilter(query, gradeId, educationType) {
