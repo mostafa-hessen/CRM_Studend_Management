@@ -1,10 +1,6 @@
-/**
- * Storage Service - Supabase Logic Layer
- */
 import { supabase } from '../core/supabase.js';
 
 export const StorageService = {
-  // Students
   async getStudents() {
     const { data, error } = await supabase.from('students').select('*').order('created_at', { ascending: true });
     if (error) throw error;
@@ -20,7 +16,6 @@ export const StorageService = {
     if (error) throw error;
   },
 
-  // Grades (Classes)
   async getGrades() {
     const { data, error } = await supabase.from('grades').select('*').order('id', { ascending: true });
     if (error) throw error;
@@ -36,7 +31,6 @@ export const StorageService = {
     if (error) throw error;
   },
 
-  // Campaigns
   async getCampaigns() {
     const { data, error } = await supabase.from('campaigns').select('*').order('created_at', { ascending: false });
     if (error) throw error;
@@ -52,7 +46,6 @@ export const StorageService = {
     if (error) throw error;
   },
 
-  // Campaign Students
   async getCampaignStudents(campaignId) {
     const { data, error } = await supabase.from('campaign_students').select('*').eq('campaign_id', campaignId);
     if (error) return [];
@@ -63,23 +56,27 @@ export const StorageService = {
     if (error) throw error;
   },
 
-  // Logs
   async getLogs() {
-    const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(100);
+    const { data, error } = await supabase.from('audit_logs').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(100);
     if (error) return [];
+
     return data;
   },
+
   async saveLog(log) {
-    const { error } = await supabase.from('audit_logs').insert(log);
-    if (error) console.error('Error saving log:', error);
+    await supabase.from('audit_logs').insert(log);
   },
 
-  // Profiles
   async getProfiles() {
     const { data, error } = await supabase.from('profiles').select('*');
     if (error) return {};
     const profiles = {};
     data.forEach(p => { profiles[p.id] = p; });
     return profiles;
+  },
+  async upsertProfile(profile) {
+    const { data, error } = await supabase.from('profiles').upsert(profile).select();
+    if (error) throw error;
+    return data[0];
   }
 };

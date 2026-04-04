@@ -6,6 +6,10 @@ import { StateManager } from '../core/state.js';
 let editingId = null;
 
 export const ClassController = {
+  init(initialClasses) {
+    this.render();
+  },
+
   render() {
     ClassView.renderList(ClassModel.getAll());
   },
@@ -23,7 +27,8 @@ export const ClassController = {
   },
 
   async handleSave() {
-    const name = document.getElementById('class-name').value.trim();
+    const name = document.getElementById('cl-name').value.trim();
+
     if (!name) {
       UIService.showToast('يرجى كتابة اسم الصف', 'error');
       return;
@@ -41,7 +46,8 @@ export const ClassController = {
       this.render();
       UIService.showToast('تم حفظ التعديلات بنجاح', 'success');
     } catch (err) {
-      UIService.showError(err, 'حدث خطأ أثناء حفظ الصف.');
+      UIService.showError(err);
+
     } finally {
       UIService.clearBtnLoading('btn-save-class');
     }
@@ -53,7 +59,8 @@ export const ClassController = {
       this.render();
       UIService.showToast('تم حذف الصف بنجاح', 'success');
     } catch (err) {
-      UIService.showError(err, 'فشل في حذف الصف الدراسي.');
+      UIService.showError(err);
+
     }
   }
 };

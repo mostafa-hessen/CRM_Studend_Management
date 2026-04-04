@@ -39,11 +39,12 @@ export const StateManager = {
 
   async loadPersistentData() {
     try {
-      const [students, campaigns, grades, logs] = await Promise.all([
+      const [students, campaigns, grades, logs, profiles] = await Promise.all([
         StorageService.getStudents(),
         StorageService.getCampaigns(),
         StorageService.getGrades(),
-        StorageService.getLogs()
+        StorageService.getLogs(),
+        StorageService.getProfiles()
       ]);
 
       state.students = students || [];
@@ -55,6 +56,7 @@ export const StateManager = {
         { name: 'ثالثة ثانوي' }
       ];
       state.activityLogs = logs || [];
+      state.appUsers = profiles || {};
     } catch (error) {
       console.error('State load error:', error);
       throw error;
@@ -69,13 +71,17 @@ export const StateManager = {
         
         switch (table) {
           case 'students':
-            if (eventType === 'INSERT') state.students.push(newRow);
+            if (eventType === 'INSERT') {
+              if (!state.students.find(s => s.id === newRow.id)) state.students.push(newRow);
+            }
             if (eventType === 'UPDATE') state.students = state.students.map(s => s.id === newRow.id ? newRow : s);
             if (eventType === 'DELETE') state.students = state.students.filter(s => s.id !== oldRow.id);
             break;
             
           case 'campaigns':
-            if (eventType === 'INSERT') state.campaigns.push(newRow);
+            if (eventType === 'INSERT') {
+              if (!state.campaigns.find(c => c.id === newRow.id)) state.campaigns.push(newRow);
+            }
             if (eventType === 'UPDATE') state.campaigns = state.campaigns.map(c => c.id === newRow.id ? newRow : c);
             if (eventType === 'DELETE') state.campaigns = state.campaigns.filter(c => c.id !== oldRow.id);
             break;

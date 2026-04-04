@@ -1,6 +1,5 @@
-/**
- * UI Service - Visual Helper
- */
+import { handleSupabaseError } from '../core/errorHandler.js';
+
 export const UIService = {
   showToast(message, type = 'info') {
     const icons = { 
@@ -55,9 +54,9 @@ export const UIService = {
     btn.innerHTML = btn.dataset.originalInner;
   },
 
-  showError(err, customMessage = 'عذراً، حدث خطأ غير متوقع.') {
-    console.error('System Error:', err);
-    this.showToast(customMessage, 'error');
+  showError(err, customMessage = null) {
+    const finalMessage = customMessage || handleSupabaseError(err);
+    this.showToast(finalMessage, 'error');
   },
 
   toggleSidebar() {

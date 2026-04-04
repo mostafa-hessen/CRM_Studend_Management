@@ -2,12 +2,15 @@ import { StudentModel } from '../models/studentModel.js';
 import { StudentView } from '../views/studentView.js';
 import { UIService } from '../services/uiService.js';
 import { StateManager } from '../core/state.js';
+import { ClassModel } from '../models/classModel.js';
+
 
 let editingId = null;
 
-export const StudentController = {
+  export const StudentController = {
+  onStudentSavedCallback: null,
+
   init(initialStudents) {
-    // Model manages state via StateManager now
     this.render();
   },
 
@@ -15,17 +18,41 @@ export const StudentController = {
     StudentView.renderTable(StudentModel.getAll());
   },
 
+  handleFilter(query, gradeId, educationType) {
+    let students = StudentModel.getAll();
+
+    if (query) {
+      students = students.filter(s => 
+        (s.name && s.name.toLowerCase().includes(query)) ||
+        (s.phone && s.phone.includes(query)) ||
+        (s.school && s.school.toLowerCase().includes(query))
+      );
+    }
+
+    if (gradeId) {
+      students = students.filter(s => s.grade_id && s.grade_id.toString() === gradeId);
+    }
+
+    if (educationType) {
+      students = students.filter(s => s.education_type === educationType);
+    }
+
+    StudentView.renderTable(students);
+  },
+
   handleOpenAddModal() {
     editingId = null;
-    StudentView.showModal('إضافة طالب جديد');
+    StudentView.showModal('إضافة طالب جديد', null, ClassModel.getAll());
   },
+
 
   handleOpenEditModal(id) {
     const student = StudentModel.getById(id);
     if (!student) return;
     editingId = id;
-    StudentView.showModal('تعديل بيانات الطالب', student);
+    StudentView.showModal('تعديل بيانات الطالب', student, ClassModel.getAll());
   },
+
 
   async handleSave() {
     const data = StudentView.getFormData();
@@ -47,8 +74,13 @@ export const StudentController = {
       StudentView.closeModal();
       this.render();
       UIService.showToast(editingId ? 'تم التحديث بنجاح' : 'تمت الإضافة بنجاح', 'success');
+
+      if (this.onStudentSavedCallback && !editingId) {
+         this.onStudentSavedCallback(saved);
+         this.onStudentSavedCallback = null;
+      }
     } catch (error) {
-      UIService.showError(error, 'فشل في حفظ البيانات');
+      UIService.showError(error);
     } finally {
       UIService.clearBtnLoading('btn-save-student');
     }
@@ -60,7 +92,7 @@ export const StudentController = {
       this.render();
       UIService.showToast('تم حذف الطالب بنجاح', 'success');
     } catch (error) {
-      UIService.showError(error, 'فشل في حذف الطالب');
+      UIService.showError(error);
     }
   }
 };

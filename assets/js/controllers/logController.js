@@ -17,8 +17,11 @@ export const LogController = {
           </div>
           <div class="bg-white border-b border-slate-50 pb-5">
             <div class="flex items-center justify-between mb-1">
-              <h4 class="font-bold text-slate-800">${l.user_id || 'مستخدم'}</h4>
-              <span class="text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-1 rounded-lg">${dateStr} ${timeStr}</span>
+              <div>
+                <h4 class="font-bold text-slate-800">${l.profiles ? l.profiles.full_name : (l.user_id || 'مستخدم')}</h4>
+                ${l.profiles && l.profiles.email ? `<p class="text-[10px] text-slate-500">${l.profiles.email}</p>` : ''}
+              </div>
+              <span class="text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-1 rounded-lg self-start">${dateStr} ${timeStr}</span>
             </div>
             <p class="text-xs font-black text-blue-600 mb-1">${l.action}</p>
             <p class="text-xs text-slate-500 leading-relaxed">${l.details}</p>

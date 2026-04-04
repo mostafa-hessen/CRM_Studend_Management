@@ -1,47 +1,50 @@
-/**
- * User Model
- */
 import { StateManager } from '../core/state.js';
+import { supabase } from '../core/supabase.js';
 
 export const UserModel = {
   getAll() {
-    return StateManager.getState().appUsers || {};
+    return StateManager.getState().profiles || [];
   },
 
-  getByUsername(username) {
-    return this.getAll()[username];
+  getById(id) {
+    return this.getAll().find(p => p.id === id);
   },
 
-  save(username, userData) {
-    const state = StateManager.getState();
-    const isEdit = !!state.appUsers[username];
-    
-    state.appUsers[username] = {
-      ...(state.appUsers[username] || {}),
-      ...userData,
-      role: state.appUsers[username]?.role || 'موظف'
-    };
-
-    StateManager.save();
-    return isEdit;
+  async loadAll() {
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (error) throw error;
+    StateManager.getState().profiles = data;
+    return data;
   },
 
-  delete(username) {
-    if (username === 'wael') return false;
-    const state = StateManager.getState();
-    const name = state.appUsers[username]?.name;
-    delete state.appUsers[username];
-    StateManager.save();
-    return name;
-  },
-
-  updatePassword(username, newPass) {
-    const state = StateManager.getState();
-    if (state.appUsers[username]) {
-      state.appUsers[username].pass = newPass;
-      StateManager.save();
-      return true;
+  async save(userData, id = null) {
+    if (id) {
+      // Update existing user via RPC
+      const { error } = await supabase.rpc('admin_update_user', {
+        p_user_id: id,
+        p_email: userData.email,
+        p_full_name: userData.name,
+        p_role: userData.role || 'موظف',
+        p_password: userData.pass || null,
+        p_status: userData.status || 'نشط'
+      });
+      if (error) throw error;
+    } else {
+      // Create new user via RPC
+      const { error } = await supabase.rpc('admin_create_user', {
+        p_email: userData.email,
+        p_password: userData.pass,
+        p_full_name: userData.name,
+        p_role: userData.role || 'موظف'
+      });
+      if (error) throw error;
     }
-    return false;
+    await this.loadAll(); // Reload profiles after mutation
+  },
+
+  async delete(id) {
+    const { error } = await supabase.rpc('admin_delete_user', { p_user_id: id });
+    if (error) throw error;
+    await this.loadAll();
   }
 };

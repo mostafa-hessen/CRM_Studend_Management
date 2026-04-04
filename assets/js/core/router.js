@@ -23,17 +23,23 @@ export const Router = {
       const activeNav = document.querySelector('.nav-item.active');
       const pageId = forcedPage || (activeNav ? activeNav.id.replace('nav-', '') : 'dashboard');
 
-      document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-      const activeSection = document.getElementById(`section-${pageId}`);
-      if (activeSection) activeSection.classList.remove('hidden');
+      // Hide all pages
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      
+      // Show target page
+      const targetPage = document.getElementById(`page-${pageId}`);
+      if (targetPage) targetPage.classList.add('active');
 
+      // Update Nav active state
       document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.id === `nav-${pageId}`);
       });
 
       if (renderers[pageId]) renderers[pageId]();
       
-      // Close sidebar on mobile after navigation
-      document.getElementById('sidebar').classList.remove('open');
+      // Close sidebar on mobile
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar) sidebar.classList.remove('open');
   }
+
 };

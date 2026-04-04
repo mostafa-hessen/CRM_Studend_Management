@@ -1,6 +1,3 @@
-/**
- * User View
- */
 import { UIService } from '../services/uiService.js';
 
 export const UserView = {
@@ -9,46 +6,64 @@ export const UserView = {
     if (!tbody) return;
 
     let html = '';
-    for (const username in users) {
-      const u = users[username];
-      const isMaster = username === 'wael';
+    users.forEach(u => {
+      const isAdmin = u.role === 'admin' || u.role === 'مدير النظام';
+      const isSuspended = u.status === 'موقوف';
       html += `
-        <tr>
+        <tr class="${isSuspended ? 'opacity-50' : ''}">
           <td>
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-sm font-bold flex-shrink-0">${u.name ? u.name[0] : '?'}</div>
+              <div class="w-9 h-9 rounded-full ${isSuspended ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'} flex items-center justify-center text-sm font-bold flex-shrink-0">
+                ${u.full_name ? u.full_name[0] : '?'}
+              </div>
               <div>
-                <p class="font-bold text-slate-800">${u.name}</p>
-                <p class="text-xs text-slate-400 font-mono">@${username}</p>
+                <p class="font-bold ${isSuspended ? 'text-red-700 decoration-line-through' : 'text-slate-800'}">${u.full_name}</p>
+                <p class="text-xs text-slate-400 font-mono">${u.email || '—'}</p>
               </div>
             </div>
           </td>
-          <td><span class="badge ${u.role === 'مدير النظام' ? 'badge-interested' : 'badge-registered'}">${u.role}</span></td>
-          <td class="text-xs font-mono text-slate-500">${u.phone || '—'}</td>
+          <td><span class="badge ${isAdmin ? 'badge-interested' : 'badge-registered'}">${u.role}</span></td>
+          <td>
+            <span class="badge ${isSuspended ? 'badge-not-interested' : 'badge-registered'}">${u.status || 'نشط'}</span>
+          </td>
           <td>
             <div class="flex gap-2">
-              ${!isMaster ? `
-                <button onclick="openEditUserModal('${username}')" class="btn-edit text-xs p-1 px-2"><i class="fas fa-edit"></i></button>
-                <button onclick="changeAppUserPassword('${username}')" class="btn-primary-outline text-xs p-1 px-2" title="تغيير كلمة المرور"><i class="fas fa-key"></i></button>
-                <button onclick="deleteAppUser('${username}')" class="btn-danger text-xs p-1 px-2"><i class="fas fa-trash"></i></button>
-              ` : '<span class="text-xs text-slate-300 italic">مدير أساسي (محمي)</span>'}
+              <button onclick="openEditUserModal('${u.id}')" class="btn-edit text-xs p-1 px-2" title="تعديل"><i class="fas fa-edit"></i></button>
+              <button onclick="changeAppUserPassword('${u.id}')" class="btn-primary-outline text-xs p-1 px-2" title="تغيير كلمة المرور"><i class="fas fa-key"></i></button>
+              ${!isAdmin ? `
+                <button onclick="deleteAppUser('${u.id}')" class="btn-danger text-xs p-1 px-2" title="حذف"><i class="fas fa-trash"></i></button>
+              ` : '<span class="text-xs text-slate-300 italic">محمي</span>'}
             </div>
           </td>
         </tr>
       `;
-    }
-    tbody.innerHTML = html || '<tr><td colspan="4" class="text-center py-10">لا يوجد موظفين مسجلين.</td></tr>';
+    });
+    tbody.innerHTML = html || '<tr><td colspan="4" class="text-center py-10">لا يوجد مستخدمين مسجلين.</td></tr>';
   },
 
-  openModal(username = null, userData = null) {
-    document.getElementById('modal-add-user-title').textContent = username ? 'تعديل بيانات موظف' : 'إضافة موظف جديد';
-    document.getElementById('u-username').value = username || '';
-    document.getElementById('u-username').disabled = !!username;
+  openModal(id = null, userData = null) {
+    document.getElementById('modal-add-user-title').textContent = id ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد';
     
-    document.getElementById('u-name').value = userData ? userData.name : '';
-    document.getElementById('u-phone').value = userData ? userData.phone : '';
+    document.getElementById('u-email').value = userData ? userData.email : '';
+    document.getElementById('u-email').disabled = false; // Enabled to allow email edit
+    
+    document.getElementById('u-name').value = userData ? userData.full_name : '';
+    document.getElementById('u-role').value = userData ? userData.role : 'موظف';
     document.getElementById('u-password').value = '';
     
+    if (id) {
+        document.getElementById('save-user-btn-text').textContent = 'حفظ التعديلات';
+        if (document.getElementById('u-status-container')) {
+            document.getElementById('u-status-container').style.display = 'block';
+            document.getElementById('u-status').value = userData && userData.status ? userData.status : 'نشط';
+        }
+    } else {
+        document.getElementById('save-user-btn-text').textContent = 'إضافة موظف';
+        if (document.getElementById('u-status-container')) {
+            document.getElementById('u-status-container').style.display = 'none';
+        }
+    }
+
     UIService.openModal('modal-add-user');
   }
 };

@@ -11,7 +11,14 @@
 </head>
 <body>
 
+<!-- Preloader -->
+<div id="preloader">
+  <div class="loader-spinner"></div>
+  <div class="loader-text">جاري تحميل النظام...</div>
+</div>
+
 <!-- Login Overlay -->
+
 <div id="login-overlay">
   <div class="login-box">
     <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-6 shadow-xl">
@@ -46,46 +53,48 @@
 
   <nav class="flex-1 py-4 overflow-y-auto custom-scrollbar">
     <p class="text-slate-500 text-xs font-bold px-8 mb-3 uppercase tracking-widest">القائمة الرئيسية</p>
-    <a class="nav-item active" onclick="navigate('dashboard')">
+    <a id="nav-dashboard" class="nav-item active" onclick="navigate('dashboard')">
       <span class="icon"><i class="fas fa-chart-pie"></i></span>
       <span>لوحة التحكم</span>
     </a>
-    <a id="nav-backup" class="nav-item text-emerald-400 hover:text-emerald-500 hover:bg-emerald-500/10" onclick="openModal('modal-backup')">
+    <!-- <a id="nav-backup" class="nav-item text-emerald-400 hover:text-emerald-500 hover:bg-emerald-500/10" onclick="openModal('modal-backup')">
       <span class="icon bg-emerald-500/10"><i class="fas fa-download text-emerald-500"></i></span>
       <span>النسخ الاحتياطي</span>
-    </a>
-    <a class="nav-item" onclick="navigate('students')">
+    </a> -->
+    <a id="nav-students" class="nav-item" onclick="navigate('students')">
       <span class="icon"><i class="fas fa-user-graduate"></i></span>
       <span>الطلاب</span>
     </a>
-    <a class="nav-item" onclick="navigate('campaigns')">
+    <a id="nav-campaigns" class="nav-item" onclick="navigate('campaigns')">
       <span class="icon"><i class="fas fa-bullhorn"></i></span>
       <span>الحملات</span>
     </a>
-    <a class="nav-item" onclick="navigate('followups')">
+    <a id="nav-followups" class="nav-item" onclick="navigate('followups')">
       <span class="icon"><i class="fas fa-phone-alt"></i></span>
       <span>المتابعات</span>
       <span id="followup-badge" class="mr-auto bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
     </a>
-    <a class="nav-item" onclick="navigate('reports')">
+    <a id="nav-reports" class="nav-item" onclick="navigate('reports')">
       <span class="icon"><i class="fas fa-chart-bar"></i></span>
       <span>التقارير</span>
     </a>
-    <a class="nav-item" onclick="navigate('classes')">
+    <a id="nav-classes" class="nav-item" onclick="navigate('classes')">
       <span class="icon"><i class="fas fa-layer-group"></i></span>
       <span>الصفوف الدراسية</span>
     </a>
-    <a class="nav-item" onclick="navigate('guide')">
+    <a id="nav-guide" class="nav-item" onclick="navigate('guide')">
       <span class="icon"><i class="fas fa-book-open"></i></span>
       <span>دليل الاستخدام</span>
     </a>
+
     <a id="nav-users" class="nav-item hidden-user-element" onclick="navigate('users')">
       <span class="icon"><i class="fas fa-users-cog"></i></span>
       <span>إدارة الموظفين</span>
     </a>
     <a id="nav-logs" class="nav-item hidden-user-element" onclick="navigate('logs')">
       <span class="icon"><i class="fas fa-history"></i></span>
-      <span>سجل النشاطات</span>
+      <span>تتبع جميع العمليات</span>
+
     </a>
     <a id="nav-reset" class="nav-item text-red-400 hover:text-red-500 hover:bg-red-500/10 hidden-user-element" onclick="resetApp()">
       <span class="icon bg-red-500/10"><i class="fas fa-trash-alt text-red-500"></i></span>
@@ -254,11 +263,17 @@
       <!-- Search & Filter -->
       <div class="bg-white rounded-xl border border-slate-100 p-4 mb-5 flex flex-wrap gap-3">
         <div class="relative flex-1 min-w-48">
-          <input type="text" placeholder="بحث باسم الطالب..." class="form-input pr-10" oninput="filterStudents(this.value)"/>
+          <input type="text" id="search-student-query" placeholder="بحث بالاسم، رقم الطالب، أو المدرسة..." class="form-input pr-10" oninput="window.filterStudents()"/>
           <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
         </div>
-        <select id="filter-class" class="form-input w-auto" onchange="filterByClass(this.value)">
+        <select id="filter-class" class="form-input w-auto" onchange="window.filterStudents()">
           <option value="">جميع الصفوف</option>
+        </select>
+        <select id="filter-education" class="form-input w-auto" onchange="window.filterStudents()">
+          <option value="">كل أنواع التعليم</option>
+          <option value="عام">عام</option>
+          <option value="أزهر">أزهر</option>
+          <option value="لغات">لغات</option>
         </select>
       </div>
 
@@ -268,11 +283,11 @@
             <thead>
               <tr>
                 <th>#</th>
-                <th>اسم الطالب</th>
-                <th>رقم الهاتف</th>
+                <th>اسم الطالب / المدرسة</th>
+                <th>رقم الطالب</th>
                 <th>هاتف ولي الأمر</th>
                 <th>الصف</th>
-                <th>المدرسة</th>
+                <th>نوع التعليم</th>
                 <th>ملاحظات</th>
                 <th>الإجراءات</th>
               </tr>
@@ -292,7 +307,7 @@
         </div>
         <div class="flex gap-2">
           <input type="text" id="new-class-name" placeholder="اسم الصف الجديد..." class="form-input w-48"/>
-          <button class="btn-primary" onclick="addClass()">
+          <button class="btn-primary" onclick="openAddClassModal()">
             <i class="fas fa-plus"></i> إضافة صف
           </button>
         </div>
@@ -562,13 +577,30 @@
 
     <!-- ============= USER MANAGEMENT PAGE ============= -->
     <div id="page-users" class="page">
-      <div class="mb-6">
-        <h2 class="text-xl font-black text-slate-800">إدارة المستخدمين</h2>
-        <p class="text-sm text-slate-500">التحكم في مستخدمي النظام وكلمات المرور الخاصة بهم</p>
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-800">إدارة الموظفين</h2>
+          <p class="text-sm text-slate-500">التحكم في الموظفين وصلاحياتهم وكلمات المرور</p>
+        </div>
+        <button class="btn-primary" onclick="openAddUserModal()">
+          <i class="fas fa-plus"></i> إضافة موظف
+        </button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="users-list">
-        <!-- Users will be injected here -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الموظف</th>
+                <th>الصلاحية</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="users-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -576,7 +608,7 @@
     <div id="page-logs" class="page">
       <div class="mb-6 flex items-center justify-between">
         <div>
-          <h2 class="text-xl font-black text-slate-800">سجل النشاطات</h2>
+          <h2 class="text-xl font-black text-slate-800">تتبع جميع العمليات التي تمت على النظام بشكل زمني</h2>
           <p class="text-sm text-slate-500">تتبع جميع العمليات التي تمت على النظام بشكل زمني</p>
         </div>
         <button onclick="navigate('dashboard')" class="text-blue-600 font-bold text-sm bg-blue-50 px-4 py-2 rounded-xl">
@@ -643,7 +675,7 @@
 
     <div class="flex gap-3 mt-6">
       <button id="btn-save-student" onclick="saveStudent()" class="btn-primary flex-1 justify-center">
-        <i class="fas fa-save"></i> حفظ الطالب
+        <i class="fas fa-save"></i> <span id="save-student-btn-text">حفظ الطالب</span>
       </button>
       <button onclick="closeModal('modal-student')" class="flex-1 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
         إلغاء
@@ -684,16 +716,10 @@
           </select>
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4">
         <div>
           <label class="form-label">تاريخ الحملة</label>
           <input type="date" id="c-date" class="form-input"/>
-        </div>
-        <div>
-          <label class="form-label">الموظفون المسؤولون</label>
-          <div id="campaign-employees-list" class="bg-slate-50 border border-slate-200 rounded-xl p-3 max-h-32 overflow-y-auto space-y-2">
-            <!-- سيتم إضافة الموظفين ديناميكياً -->
-          </div>
         </div>
       </div>
       <div>
@@ -800,7 +826,7 @@
 <div class="modal-overlay" id="modal-add-user">
   <div class="modal-box" style="max-width:400px">
     <div class="flex items-center justify-between mb-6">
-      <h3 class="text-xl font-black text-slate-800" id="modal-user-title">إضافة موظف جديد</h3>
+      <h3 class="text-xl font-black text-slate-800" id="modal-add-user-title">إضافة مستخدم جديد</h3>
       <button onclick="closeModal('modal-add-user')" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-slate-500 transition-all">
         <i class="fas fa-times"></i>
       </button>
@@ -811,21 +837,31 @@
         <input type="text" id="u-name" class="form-input" placeholder="اسم الموظف الثلاثي"/>
       </div>
       <div>
-        <label class="form-label">اسم المستخدم (Username)</label>
-        <input type="text" id="u-username" class="form-input" placeholder="مثال: ahmed_2024"/>
+        <label class="form-label">البريد الإلكتروني <span class="text-red-500">*</span></label>
+        <input type="email" id="u-email" class="form-input" placeholder="example@domain.com"/>
       </div>
       <div>
-        <label class="form-label">رقم الهاتف</label>
-        <input type="text" id="u-phone" class="form-input" placeholder="01xxxxxxxxx"/>
+        <label class="form-label">الصلاحية</label>
+        <select id="u-role" class="form-input">
+          <option value="موظف">موظف عادي</option>
+          <option value="مدير النظام">مدير النظام</option>
+        </select>
       </div>
       <div>
-        <label class="form-label">كلمة المرور</label>
+        <label class="form-label">كلمة المرور <span class="text-xs text-slate-400 font-normal">(اتركها فارغة إذا لم ترد التغيير)</span></label>
         <input type="password" id="u-password" class="form-input" placeholder="********"/>
+      </div>
+      <div id="u-status-container" style="display: none;">
+        <label class="form-label text-red-600 font-bold">حالة الحساب</label>
+        <select id="u-status" class="form-input border-red-200">
+          <option value="نشط">نشط (مسموح بالدخول)</option>
+          <option value="موقوف">موقوف (إيقاف الحساب مؤقتاً)</option>
+        </select>
       </div>
     </div>
     <div class="flex gap-3 mt-6">
       <button id="btn-save-user" onclick="saveAppUser()" class="btn-primary flex-1 justify-center">
-        <i class="fas fa-user-plus"></i> إنشاء الحساب
+        <i class="fas fa-save"></i> <span id="save-user-btn-text">حفظ الإعدادات</span>
       </button>
     </div>
   </div>
@@ -835,7 +871,7 @@
 <div class="modal-overlay" id="modal-class">
   <div class="modal-box" style="max-width:400px">
     <div class="flex items-center justify-between mb-6">
-      <h3 class="text-xl font-black text-slate-800">إدارة الصف الدراسي</h3>
+      <h3 class="text-xl font-black text-slate-800" id="modal-class-title">إدارة الصف الدراسي</h3>
       <button onclick="closeModal('modal-class')" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-slate-500 transition-all">
         <i class="fas fa-times"></i>
       </button>
@@ -848,7 +884,7 @@
     </div>
     <div class="flex gap-3 mt-6">
       <button id="btn-save-class" onclick="saveClass()" class="btn-primary flex-1 justify-center">
-        <i class="fas fa-save"></i> حفظ الصف
+        <i class="fas fa-save"></i> <span id="save-class-btn-text">حفظ الصف</span>
       </button>
     </div>
   </div>

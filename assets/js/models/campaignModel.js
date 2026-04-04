@@ -19,11 +19,12 @@ export const CampaignModel = {
   async loadCampaignStudents(campaignId) {
     const students = await StorageService.getCampaignStudents(campaignId);
     StateManager.getState().campaignStudents[campaignId] = students.map(cs => ({
-      studentId: cs.student_id,
+      student_id: cs.student_id,
       status: cs.status,
-      followupDate: cs.followup_date,
+      followup_date: cs.followup_date,
       notes: cs.notes
     }));
+
     return students;
   },
 
@@ -48,7 +49,7 @@ export const CampaignModel = {
 
   async updateStudentInCampaign(cid, sid, updates) {
     const studentsInCampaign = this.getCampaignStudents(cid);
-    const entry = studentsInCampaign.find(e => e.studentId === sid);
+    const entry = studentsInCampaign.find(e => e.student_id === sid);
     if (!entry) return;
 
     Object.assign(entry, updates);
@@ -57,10 +58,11 @@ export const CampaignModel = {
       student_id: sid,
       status: entry.status,
       notes: entry.notes,
-      followup_date: entry.followupDate
+      followup_date: entry.followup_date
     });
     StateManager.save();
   },
+
 
   getCampaignStudents(cid) {
     return StateManager.getState().campaignStudents[cid] || [];

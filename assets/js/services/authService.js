@@ -1,6 +1,3 @@
-/**
- * Auth Service - User Security Layer (Supabase Implementation)
- */
 import { supabase } from '../core/supabase.js';
 import { StateManager } from '../core/state.js';
 
@@ -9,7 +6,6 @@ export const AuthService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return null;
     
-    // Fetch profile data
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
