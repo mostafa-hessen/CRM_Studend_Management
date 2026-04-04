@@ -1,0 +1,16 @@
+{
+  "name": "student-management-system",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Student Management System for Sheikh Wael",
+  "main": "assets/js/app.js",
+  "scripts": {
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "jsdom": "^29.0.1",
+    "vitest": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.2"
+  }
+}

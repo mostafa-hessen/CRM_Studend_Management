@@ -1,23 +1,20 @@
 /**
  * Central State Management
- * @module core/state
  */
-
-import { Storage } from '../modules/storage.js';
+import { StorageService } from '../services/storageService.js';
+import { supabase } from './supabase.js';
 
 let state = {
   students: [],
   campaigns: [],
   campaignStudents: {},
   classes: [],
-  nextStudentId: 1,
-  nextCampaignId: 1,
-  nextClassId: 1,
   activityLogs: [],
   appUsers: {}
 };
 
 let currentUser = null;
+let listeners = [];
 
 export const StateManager = {
   getState() {
@@ -32,38 +29,83 @@ export const StateManager = {
     currentUser = user;
   },
 
-  loadPersistentData() {
-    const savedData = Storage.loadData();
-    if (savedData) {
-      state = { ...state, ...savedData };
-    } else {
-      // Default classes
-      state.classes = [
-        { id: 1, name: 'أولى إعدادي' },
-        { id: 2, name: 'أولى ثانوي' },
-        { id: 3, name: 'ثانية ثانوي' },
-        { id: 4, name: 'ثالثة ثانوي' }
+  subscribe(callback) {
+    listeners.push(callback);
+  },
+
+  broadcast() {
+    listeners.forEach(cb => cb(state));
+  },
+
+  async loadPersistentData() {
+    try {
+      const [students, campaigns, grades, logs] = await Promise.all([
+        StorageService.getStudents(),
+        StorageService.getCampaigns(),
+        StorageService.getGrades(),
+        StorageService.getLogs()
+      ]);
+
+      state.students = students || [];
+      state.campaigns = campaigns || [];
+      state.classes = (grades && grades.length) ? grades : [
+        { name: 'أولى إعدادي' },
+        { name: 'أولى ثانوي' },
+        { name: 'ثانية ثانوي' },
+        { name: 'ثالثة ثانوي' }
       ];
-      state.nextClassId = 5;
+      state.activityLogs = logs || [];
+    } catch (error) {
+      console.error('State load error:', error);
+      throw error;
     }
-    state.activityLogs = Storage.loadLogs() || [];
+  },
+
+  setupRealtime() {
+    supabase
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+        const { table, eventType, new: newRow, old: oldRow } = payload;
+        
+        switch (table) {
+          case 'students':
+            if (eventType === 'INSERT') state.students.push(newRow);
+            if (eventType === 'UPDATE') state.students = state.students.map(s => s.id === newRow.id ? newRow : s);
+            if (eventType === 'DELETE') state.students = state.students.filter(s => s.id !== oldRow.id);
+            break;
+            
+          case 'campaigns':
+            if (eventType === 'INSERT') state.campaigns.push(newRow);
+            if (eventType === 'UPDATE') state.campaigns = state.campaigns.map(c => c.id === newRow.id ? newRow : c);
+            if (eventType === 'DELETE') state.campaigns = state.campaigns.filter(c => c.id !== oldRow.id);
+            break;
+
+          case 'audit_logs':
+             if (eventType === 'INSERT') {
+                state.activityLogs.unshift(newRow);
+                if (state.activityLogs.length > 100) state.activityLogs.pop();
+             }
+             break;
+        }
+
+        this.broadcast();
+      })
+      .subscribe();
   },
 
   save() {
-    Storage.saveData(state);
+    // Local save/sync if needed, but we rely on realtime + storage calls
+    this.broadcast();
   },
 
-  addLog(action, details) {
+  async addLog(action, details) {
     if (!currentUser) return;
     const logEntry = {
-      user: currentUser.name,
-      username: currentUser.username,
+      user_id: currentUser.id,
       action: action,
       details: details,
-      time: new Date().toLocaleString('ar-SA')
+      created_at: new Date().toISOString()
     };
-    state.activityLogs.unshift(logEntry);
-    if (state.activityLogs.length > 100) state.activityLogs.pop();
-    Storage.saveLogs(state.activityLogs);
+    await StorageService.saveLog(logEntry);
   }
 };

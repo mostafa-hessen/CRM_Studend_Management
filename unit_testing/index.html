@@ -574,26 +574,19 @@
 
     <!-- ============= LOGS PAGE ============= -->
     <div id="page-logs" class="page">
-      <div class="mb-6">
-        <h2 class="text-xl font-black text-slate-800">سجل النشاطات</h2>
-        <p class="text-sm text-slate-500">تتبع جميع العمليات التي تمت على النظام</p>
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-black text-slate-800">سجل النشاطات</h2>
+          <p class="text-sm text-slate-500">تتبع جميع العمليات التي تمت على النظام بشكل زمني</p>
+        </div>
+        <button onclick="navigate('dashboard')" class="text-blue-600 font-bold text-sm bg-blue-50 px-4 py-2 rounded-xl">
+           <i class="fas fa-arrow-right ml-1"></i> العودة للرئيسية
+        </button>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>المستخدم</th>
-                <th>الإجراء</th>
-                <th>التفاصيل</th>
-                <th>الوقت</th>
-              </tr>
-            </thead>
-            <tbody id="logs-table">
-              <!-- Logs will be injected here -->
-            </tbody>
-          </table>
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 overflow-hidden relative">
+        <div id="logs-timeline" class="space-y-8 relative before:content-[''] before:absolute before:right-[21px] before:top-4 before:bottom-0 before:w-1 before:bg-slate-50">
+          <!-- Timeline items injected dynamically -->
         </div>
       </div>
     </div>
@@ -649,7 +642,7 @@
     </div>
 
     <div class="flex gap-3 mt-6">
-      <button onclick="saveStudent()" class="btn-primary flex-1 justify-center">
+      <button id="btn-save-student" onclick="saveStudent()" class="btn-primary flex-1 justify-center">
         <i class="fas fa-save"></i> حفظ الطالب
       </button>
       <button onclick="closeModal('modal-student')" class="flex-1 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
@@ -728,7 +721,7 @@
     </div>
 
     <div class="flex gap-3 mt-6">
-      <button onclick="saveCampaign()" class="btn-primary flex-1 justify-center">
+      <button id="btn-save-campaign" onclick="saveCampaign()" class="btn-primary flex-1 justify-center">
         <i class="fas fa-check-circle"></i> <span id="save-campaign-btn-text">إنشاء الحملة</span>
       </button>
       <button onclick="closeModal('modal-campaign')" class="flex-1 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
@@ -749,7 +742,7 @@
       <p class="text-sm text-slate-500">هل أنت متأكد من حذف هذا الطالب؟ لا يمكن التراجع عن هذا الإجراء.</p>
     </div>
     <div class="flex gap-3">
-      <button onclick="confirmDelete()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors">
+      <button id="btn-confirm-delete" onclick="confirmDelete()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors">
         نعم، احذف
       </button>
       <button onclick="closeModal('modal-delete')" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
@@ -831,7 +824,7 @@
       </div>
     </div>
     <div class="flex gap-3 mt-6">
-      <button onclick="saveAppUser()" class="btn-primary flex-1 justify-center">
+      <button id="btn-save-user" onclick="saveAppUser()" class="btn-primary flex-1 justify-center">
         <i class="fas fa-user-plus"></i> إنشاء الحساب
       </button>
     </div>
@@ -854,7 +847,7 @@
       </div>
     </div>
     <div class="flex gap-3 mt-6">
-      <button onclick="saveClass()" class="btn-primary flex-1 justify-center">
+      <button id="btn-save-class" onclick="saveClass()" class="btn-primary flex-1 justify-center">
         <i class="fas fa-save"></i> حفظ الصف
       </button>
     </div>

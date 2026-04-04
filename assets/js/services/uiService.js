@@ -1,5 +1,7 @@
-// UI Helpers
-export const UI = {
+/**
+ * UI Service - Visual Helper
+ */
+export const UIService = {
   showToast(message, type = 'info') {
     const icons = { 
       success: 'fa-check-circle text-emerald-500', 
@@ -38,6 +40,26 @@ export const UI = {
     return `<span class="badge ${type === 'أزهري' ? 'badge-call-later' : 'badge-registered'}">${type || 'عام'}</span>`;
   },
 
+  setBtnLoading(btnId, loadingText = 'جاري العمل...') {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.dataset.originalInner = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin ml-2"></i> ${loadingText}`;
+  },
+
+  clearBtnLoading(btnId) {
+    const btn = document.getElementById(btnId);
+    if (!btn || !btn.dataset.originalInner) return;
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.originalInner;
+  },
+
+  showError(err, customMessage = 'عذراً، حدث خطأ غير متوقع.') {
+    console.error('System Error:', err);
+    this.showToast(customMessage, 'error');
+  },
+
   toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
   },
@@ -52,4 +74,3 @@ export const UI = {
     if (el) el.classList.remove('open');
   }
 };
-

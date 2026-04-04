@@ -1,43 +1,30 @@
-// Dashboard Module
-import { UI } from './ui.js';
+import { UIService } from '../services/uiService.js';
 
-export const Dashboard = {
-  calculateStats(state) {
-    return {
-      total: state.students.length,
-      contacted: state.students.filter(s => s.status && s.status !== 'لم يرد' && s.status !== 'لم يتم تحديد الحالة').length,
-      interested: state.students.filter(s => s.status === 'مهتم').length,
-      registered: state.students.filter(s => s.status === 'تم التسجيل').length,
-      noanswer: state.students.filter(s => s.status === 'لم يرد').length,
-      followups: Object.keys(state.campaignStudents).reduce((acc, cid) => {
-        return acc + state.campaignStudents[cid].filter(entry => 
-          ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'].includes(entry.status)
-        ).length;
-      }, 0)
-    };
-  },
-
+export const DashboardView = {
   renderStats(stats) {
-    const ids = ['stat-total', 'stat-contacted', 'stat-interested', 'stat-registered', 'stat-noanswer', 'dash-total', 'dash-registered'];
+    const ids = ['stat-total', 'stat-contacted', 'stat-interested', 'stat-registered', 'stat-noanswer'];
     ids.forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.textContent = stats[id.split('-')[1]] || stats[id.split('-')[1]] === 0 ? stats[id.split('-')[1]] : stats.total;
+      const key = id.split('-')[1];
+      if (el) el.textContent = stats[key] !== undefined ? stats[key] : '0';
     });
-    
-    // Manual mapping for dash-total and dash-registered
+
     const dashTotal = document.getElementById('dash-total');
     if (dashTotal) dashTotal.textContent = stats.total;
     const dashRegistered = document.getElementById('dash-registered');
     if (dashRegistered) dashRegistered.textContent = stats.registered;
+    
+    const badge = document.getElementById('followup-badge');
+    if (badge) badge.textContent = stats.followups;
   },
 
-  renderTodayFollowups(followups, containerId) {
-    const tbody = document.getElementById(containerId);
+  renderTodayFollowups(followups) {
+    const tbody = document.getElementById('today-table');
     if (!tbody) return;
 
     tbody.innerHTML = followups.length ? followups.map(s => `
       <tr>
-        <td><div class="flex items-center gap-3">
+        <td><div class="items-center gap-3 flex">
           <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">${s.name[0]}</div>
           <div>
             <p class="font-medium">${s.name}</p>
@@ -46,7 +33,7 @@ export const Dashboard = {
         </div></td>
         <td><a href="tel:${s.phone}" class="text-blue-600 hover:underline font-mono text-sm">${s.phone}</a></td>
         <td><span class="text-slate-600 text-sm">${s.grade}</span></td>
-        <td>${UI.getStatusBadge(s.campaignStatus)}</td>
+        <td>${UIService.getStatusBadge(s.campaignStatus)}</td>
         <td>
           <a href="tel:${s.phone}" class="btn-success text-xs py-1.5 px-3 inline-flex items-center gap-1">
             <i class="fas fa-phone text-xs"></i> اتصال
