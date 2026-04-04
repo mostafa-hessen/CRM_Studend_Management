@@ -161,7 +161,7 @@ export const CampaignView = {
                   </td>
                   <td class="p-4">
                     <select onchange="updateCampaignStudentStatus(${id}, ${s.id}, this.value)" class="form-input text-xs py-2 px-3 bg-white w-full max-w-[150px]">
-                      ${(campaign.statuses ? JSON.parse(campaign.statuses) : ['لم يتم الاتصال', 'لم يرد', 'اتصل لاحقاً', 'متردد', 'مهتم', 'تم التسجيل', 'غير مهتم']).map(st => 
+                      ${(campaign.statuses ? JSON.parse(campaign.statuses) : ['إيجابي', 'متردد', 'اون لاين', 'موعد غير مناسب', 'اون لاين موعد', 'خارج الحملة', 'حملة زميل', 'لم يرد']).map(st => 
                         `<option value="${st}" ${entry.status === st ? 'selected' : ''}>${st}</option>`
                       ).join('')}
                     </select>
@@ -214,7 +214,7 @@ export const CampaignView = {
       document.getElementById('c-target-grade').value = '';
       document.getElementById('c-education-type').value = 'الكل';
 
-      this.renderStatusTags(['لم يتم الاتصال', 'لم يرد', 'اتصل لاحقاً', 'متردد', 'مهتم', 'تم التسجيل', 'غير مهتم']);
+      this.renderStatusTags(['إيجابي', 'متردد', 'اون لاين', 'موعد غير مناسب', 'اون لاين موعد', 'خارج الحملة', 'حملة زميل', 'لم يرد']);
     }
     UIService.openModal('modal-campaign');
   },

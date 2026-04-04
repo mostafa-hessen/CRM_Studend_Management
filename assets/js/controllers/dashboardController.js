@@ -13,14 +13,10 @@ export const DashboardController = {
     const stats = {
       total: students.length,
       contacted: students.filter(s => s.status && s.status !== 'لم يرد' && s.status !== 'لم يتم تحديد الحالة').length,
-      interested: students.filter(s => s.status === 'مهتم').length,
+      interested: students.filter(s => s.status === 'إيجابي' || s.status === 'مهتم').length,
       registered: students.filter(s => s.status === 'تم التسجيل').length,
       noanswer: students.filter(s => s.status === 'لم يرد').length,
-      followups: Object.keys(campaignStudents).reduce((acc, cid) => {
-        return acc + campaignStudents[cid].filter(entry => 
-          ['لم يرد', 'اتصل لاحقًا', 'متردد', 'مهتم'].includes(entry.status)
-        ).length;
-      }, 0)
+      followups: 0 // Followups hidden for now as per user request
     };
 
     DashboardView.renderStats(stats);

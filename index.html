@@ -69,7 +69,7 @@
       <span class="icon"><i class="fas fa-bullhorn"></i></span>
       <span>الحملات</span>
     </a>
-    <a id="nav-followups" class="nav-item" onclick="navigate('followups')">
+    <a id="nav-followups" class="nav-item hidden" onclick="navigate('followups')">
       <span class="icon"><i class="fas fa-phone-alt"></i></span>
       <span>المتابعات</span>
       <span id="followup-badge" class="mr-auto bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
@@ -221,8 +221,8 @@
         </div>
       </div>
 
-      <!-- Today Follow-ups -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <!-- Today Follow-ups (Hidden) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hidden">
         <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div class="flex items-center gap-3">
             <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
@@ -365,8 +365,8 @@
       </div>
     </div>
 
-    <!-- ============= FOLLOW UPS PAGE ============= -->
-    <div id="page-followups" class="page">
+    <!-- ============= FOLLOW UPS PAGE (Hidden) ============= -->
+    <div id="page-followups" class="page hidden">
       <div class="mb-6">
         <h2 class="text-xl font-black text-slate-800">المتابعات</h2>
         <p class="text-sm text-slate-500">الطلاب الذين يحتاجون إلى متابعة</p>
@@ -524,7 +524,8 @@
           </ol>
         </div>
 
-        <div class="guide-step">
+        <!-- Follow-up guide hidden -->
+        <!-- <div class="guide-step">
           <div class="flex items-center gap-4 mb-4">
             <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
               <i class="fas fa-phone-alt text-emerald-600 text-lg"></i>
@@ -540,7 +541,7 @@
             <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-emerald-100 text-emerald-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span><span>اضغط زر <strong>"اتصال"</strong> للتواصل مع الطالب</span></li>
             <li class="flex gap-3 text-sm text-slate-600"><span class="w-5 h-5 bg-emerald-100 text-emerald-700 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span><span>دوّن ملاحظات المتابعة بعد الاتصال</span></li>
           </ol>
-        </div>
+        </div> -->
 
         <div class="guide-step">
           <div class="flex items-center gap-4 mb-4">
