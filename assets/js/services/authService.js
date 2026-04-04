@@ -1,31 +1,47 @@
 /**
- * Auth Service - User Security Layer
+ * Auth Service - User Security Layer (Supabase Implementation)
  */
+import { supabase } from '../core/supabase.js';
 import { StateManager } from '../core/state.js';
 
 export const AuthService = {
-  getCurrentUser() {
-    const logged = sessionStorage.getItem('logged_in_user');
-    return logged ? JSON.parse(logged) : null;
+  async getCurrentUser() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    
+    // Fetch profile data
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .single();
+      
+    return {
+      id: session.user.id,
+      email: session.user.email,
+      ...profile
+    };
   },
 
-  login(username, password, appUsers) {
-    const user = appUsers[username];
-    if (user && user.pass === password) {
-      const userData = { username, ...user };
-      sessionStorage.setItem('logged_in_user', JSON.stringify(userData));
-      return userData;
-    }
-    return null;
+  async login(email, password) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) throw error;
+    
+    const profile = await this.getCurrentUser();
+    return profile;
   },
 
   async logout() {
     await StateManager.addLog('تسجيل خروج', 'خرج من النظام');
-    sessionStorage.removeItem('logged_in_user');
+    await supabase.auth.signOut();
     location.reload();
   },
 
   isAdmin(user) {
-    return user && user.role === 'مدير النظام';
+    return user && (user.role === 'admin' || user.role === 'مدير النظام');
   }
 };
